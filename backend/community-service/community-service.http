@@ -1,0 +1,32 @@
+### 1. Create a post
+POST http://localhost:8081/api/v1/posts
+Content-Type: application/json
+
+{
+  "content": "My first TounsiGuide recommendation",
+  "locationId": null
+}
+
+### 2. List all posts
+GET http://localhost:8081/api/v1/posts
+
+### 3. Get one post
+GET http://localhost:8081/api/v1/posts/1
+
+### 4. Update the post
+PUT http://localhost:8081/api/v1/posts/1
+Content-Type: application/json
+
+{
+  "content": "My updated TounsiGuide recommendation",
+  "locationId": null
+}
+
+### 5. Get the updated post
+GET http://localhost:8081/api/v1/posts/1
+
+### 6. Delete the post
+DELETE http://localhost:8081/api/v1/posts/1
+
+### 7. Confirm deletion
+GET http://localhost:8081/api/v1/posts/1

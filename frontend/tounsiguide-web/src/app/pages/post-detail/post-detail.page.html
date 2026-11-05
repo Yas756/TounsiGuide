@@ -1,0 +1,122 @@
+<a class="link back" routerLink="/">← Retour au fil</a>
+
+@if (loading()) {
+  <div class="card skeleton" aria-hidden="true"><div></div><div></div><div></div></div>
+  <span class="sr-only">Chargement de la publication…</span>
+} @else if (notFound()) {
+  <div class="card empty">
+    <p><strong>Cette publication n'existe pas ou a été supprimée.</strong></p>
+    <a class="btn btn-primary" routerLink="/">Revenir au fil</a>
+  </div>
+} @else if (loadError()) {
+  <app-error-banner [error]="loadError()" [retryable]="true" (retry)="load()" />
+} @else {
+@if (post(); as p) {
+  <article class="card post post-detail">
+    <header class="post-head">
+      <app-avatar [name]="p.authorName" />
+      <div>
+        <strong>{{ p.authorName }}</strong>
+        <span class="muted"> · {{ fullDate(p.createdAt) }}</span>
+        @if (wasEdited(p.createdAt, p.updatedAt)) {
+          <span class="muted"> · modifié {{ relativeTime(p.updatedAt) }}</span>
+        }
+      </div>
+    </header>
+
+    @if (editing()) {
+      <app-post-form
+        submitLabel="Enregistrer"
+        [showCancel]="true"
+        [initialContent]="p.content"
+        [initialLocationId]="p.locationId"
+        [locations]="locations()"
+        [locationsUnavailable]="locationsUnavailable()"
+        [busy]="saving()"
+        [fieldErrors]="saveError()?.details ?? {}"
+        (submitted)="save($event)"
+        (cancelled)="cancelEdit()" />
+      @if (saveError(); as e) {
+        @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
+      }
+    } @else {
+      <p class="post-content">{{ p.content }}</p>
+      <footer class="post-foot">
+        <app-location-tag [locationId]="p.locationId" [location]="location()" />
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" (click)="editing.set(true)">Modifier</button>
+          <button type="button" class="btn btn-danger" (click)="deletePost()" [disabled]="deleting()">
+            {{ deleting() ? 'Suppression…' : 'Supprimer' }}
+          </button>
+        </div>
+      </footer>
+      <app-error-banner [error]="deleteError()" />
+    }
+  </article>
+
+  <section class="card comments" aria-labelledby="comments-title">
+    <h2 id="comments-title">Discussion <span class="muted">({{ comments().length }})</span></h2>
+    <p class="muted small">Vous connaissez le lieu dont il est question ? Dites-le en commentaire : l'auteur pourra le confirmer.</p>
+
+    @if (commentsError(); as e) {
+      <app-error-banner [error]="e" [retryable]="true" (retry)="reloadComments()" />
+    }
+    <app-error-banner [error]="commentActionError()" />
+
+    <ul class="comment-list">
+      @for (c of sortedComments(); track c.id) {
+        <li class="comment">
+          <app-avatar [name]="c.authorName" />
+          <div class="comment-body">
+            <div>
+              <strong>{{ c.authorName }}</strong>
+              <span class="muted" [title]="fullDate(c.createdAt)"> · {{ relativeTime(c.createdAt) }}</span>
+              @if (wasEdited(c.createdAt, c.updatedAt)) { <span class="muted"> · modifié</span> }
+            </div>
+            @if (editingCommentId() === c.id) {
+              <textarea rows="2" [ngModel]="editedComment()" (ngModelChange)="editedComment.set($event)"
+                        aria-label="Modifier le commentaire"></textarea>
+              <div class="actions">
+                <button type="button" class="btn btn-ghost" (click)="editingCommentId.set(null)">Annuler</button>
+                <button type="button" class="btn btn-primary" (click)="saveComment(c)"
+                        [disabled]="!editedComment().trim() || busyCommentId() === c.id">Enregistrer</button>
+              </div>
+            } @else {
+              <p>{{ c.content }}</p>
+              <div class="actions actions-small">
+                <button type="button" class="btn-text" (click)="startEditComment(c)">Modifier</button>
+                <button type="button" class="btn-text danger" (click)="deleteComment(c)"
+                        [disabled]="busyCommentId() === c.id">Supprimer</button>
+              </div>
+            }
+          </div>
+        </li>
+      } @empty {
+        @if (!commentsError()) {
+          <li class="muted">Aucun commentaire pour l'instant. Lancez la discussion.</li>
+        }
+      }
+    </ul>
+
+    <form class="comment-form" (ngSubmit)="addComment()">
+      <label class="field">
+        <span class="label">Ajouter un commentaire</span>
+        <textarea name="comment" rows="2" placeholder="Votre réponse, un conseil, un indice sur le lieu…"
+                  [ngModel]="newComment()" (ngModelChange)="newComment.set($event)"
+                  [attr.aria-invalid]="!!commentError()?.details?.['content']"></textarea>
+        @if (commentError()?.details?.['content']; as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      @if (commentError(); as e) {
+        @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
+      }
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="!newComment().trim() || sendingComment()">
+          {{ sendingComment() ? 'Envoi…' : 'Commenter' }}
+        </button>
+      </div>
+    </form>
+  </section>
+}
+}

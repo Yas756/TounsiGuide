@@ -1,0 +1,40 @@
+<form class="post-form" (ngSubmit)="submit()">
+  <label class="field">
+    <span class="label">Votre recommandation, question ou expérience</span>
+    <textarea name="content" rows="4" required
+              placeholder="Un café calme pour travailler à Tunis ? Une plage peu connue ? Partagez-le ici."
+              [ngModel]="content()" (ngModelChange)="content.set($event)"
+              [attr.aria-invalid]="!!fieldErrors()['content']"></textarea>
+    @if (fieldErrors()['content']; as msg) {
+      <span class="field-error">{{ msg }}</span>
+    }
+  </label>
+
+  <div class="form-row">
+    <label class="field field-inline">
+      <span class="label">Lieu (facultatif)</span>
+      <select name="locationId" [ngModel]="locationId()" (ngModelChange)="locationId.set($event)"
+              [disabled]="locationsUnavailable()">
+        <option [ngValue]="null">Aucun lieu précis</option>
+        @for (l of locations(); track l.id) {
+          <option [ngValue]="l.id">{{ l.name }}{{ l.city ? ' · ' + l.city : '' }}</option>
+        }
+      </select>
+      @if (locationsUnavailable()) {
+        <span class="hint">Catalogue des lieux indisponible : vous pouvez publier sans lieu.</span>
+      }
+      @if (fieldErrors()['locationId']; as msg) {
+        <span class="field-error">{{ msg }}</span>
+      }
+    </label>
+
+    <div class="form-actions">
+      @if (showCancel()) {
+        <button type="button" class="btn btn-ghost" (click)="cancelled.emit()" [disabled]="busy()">Annuler</button>
+      }
+      <button type="submit" class="btn btn-primary" [disabled]="!canSubmit()">
+        {{ busy() ? 'Envoi…' : submitLabel() }}
+      </button>
+    </div>
+  </div>
+</form>

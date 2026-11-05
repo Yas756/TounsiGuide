@@ -1,0 +1,132 @@
+/* TounsiGuide global styles. Colors are tokens so a future design pass can change them in one place. */
+:root {
+  --brand: #c8102e;          /* Tunisian red */
+  --brand-ink: #9b0c23;
+  --bg: #f7f5f2;
+  --surface: #ffffff;
+  --ink: #1f1d1a;
+  --muted: #6b665f;
+  --line: #e6e1da;
+  --danger: #b3261e;
+  --danger-bg: #fdecea;
+  --focus: #1a73e8;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 2px 8px rgba(0, 0, 0, .04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #ef4444;
+    --brand-ink: #f87171;
+    --bg: #161514;
+    --surface: #211f1d;
+    --ink: #f1eee9;
+    --muted: #a39d94;
+    --line: #34312d;
+    --danger: #f87171;
+    --danger-bg: #3a1d1b;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+h1, h2 { line-height: 1.2; margin: 0 0 .25rem; }
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.15rem; }
+p { margin: 0 0 .5rem; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.muted { color: var(--muted); }
+.small { font-size: .875rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Layout */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+.topbar-inner { max-width: 720px; margin: 0 auto; padding: .6rem 1rem; display: flex; align-items: center; gap: 1.25rem; }
+.brand { display: flex; align-items: center; gap: .5rem; text-decoration: none; font-size: 1.15rem; }
+.brand svg { width: 28px; height: 28px; }
+.brand b { color: var(--brand); }
+.topbar nav { display: flex; gap: .25rem; flex: 1; }
+.topbar nav a { text-decoration: none; padding: .35rem .7rem; border-radius: 999px; color: var(--muted); }
+.topbar nav a.active { background: var(--bg); color: var(--ink); font-weight: 600; }
+.demo-badge { font-size: .75rem; border: 1px dashed var(--line); color: var(--muted); padding: .2rem .55rem; border-radius: 999px; cursor: help; }
+.container { max-width: 720px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+.site-foot { text-align: center; padding: 1.5rem 1rem; }
+.page-head { margin-bottom: 1rem; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1rem 1.1rem; margin-bottom: .9rem; }
+.empty { text-align: center; padding: 2rem 1rem; }
+.empty .btn { margin-top: .5rem; }
+
+/* Posts */
+.post-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; }
+.post-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+.post-foot { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; margin-top: .5rem; }
+.post-detail .post-content { font-size: 1.05rem; }
+.avatar { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--bg); border: 1px solid var(--line); font-size: .8rem; font-weight: 600; color: var(--brand-ink); }
+.tag { display: inline-flex; align-items: center; gap: .3rem; font-size: .85rem; background: var(--bg); border: 1px solid var(--line); padding: .15rem .55rem; border-radius: 999px; }
+.tag svg { width: 14px; height: 14px; fill: none; stroke: var(--brand); stroke-width: 2; }
+.link { color: var(--brand-ink); text-decoration: none; font-weight: 500; }
+.link:hover { text-decoration: underline; }
+.back { display: inline-block; margin-bottom: .8rem; }
+
+/* Comments */
+.comments h2 { margin-bottom: .2rem; }
+.comment-list { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: .9rem; }
+.comment { display: flex; gap: .6rem; }
+.comment-body { flex: 1; min-width: 0; }
+.comment-body p { white-space: pre-wrap; overflow-wrap: anywhere; margin: .15rem 0 .1rem; }
+.comment-form { border-top: 1px solid var(--line); padding-top: .9rem; }
+
+/* Forms */
+.field { display: grid; gap: .3rem; margin-bottom: .6rem; }
+.field-inline { margin: 0; flex: 1; min-width: 200px; }
+.label { font-size: .85rem; font-weight: 600; color: var(--muted); }
+textarea, select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: .55rem .65rem;
+}
+textarea { resize: vertical; }
+[aria-invalid="true"] { border-color: var(--danger); }
+.field-error { color: var(--danger); font-size: .85rem; }
+.hint { color: var(--muted); font-size: .8rem; }
+.form-row { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
+.form-actions, .actions { display: flex; gap: .5rem; justify-content: flex-end; margin-left: auto; }
+.actions-small { justify-content: flex-start; margin: 0; }
+
+/* Buttons */
+.btn { font: inherit; font-weight: 600; border-radius: 8px; padding: .5rem .95rem; border: 1px solid transparent; cursor: pointer; text-decoration: none; display: inline-block; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:not(:disabled):hover { background: var(--brand-ink); }
+.btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+.btn-text { background: none; border: 0; padding: 0; font: inherit; font-size: .85rem; color: var(--muted); cursor: pointer; }
+.btn-text:hover { color: var(--ink); text-decoration: underline; }
+.btn-text.danger:hover { color: var(--danger); }
+
+/* Banners */
+.banner { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; border-radius: 8px; padding: .75rem .9rem; margin: .6rem 0; }
+.banner ul { margin: .35rem 0 0; padding-left: 1.1rem; }
+.banner-error { background: var(--danger-bg); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); }
+
+/* Loading skeleton */
+.skeleton div { height: .8rem; border-radius: 4px; background: var(--line); margin: .5rem 0; animation: pulse 1.2s ease-in-out infinite; }
+.skeleton div:nth-child(1) { width: 35%; }
+.skeleton div:nth-child(3) { width: 70%; }
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .skeleton div { animation: none; } }
+
+@media (max-width: 520px) {
+  .topbar-inner { gap: .6rem; }
+  .demo-badge { display: none; }
+  h1 { font-size: 1.35rem; }
+}

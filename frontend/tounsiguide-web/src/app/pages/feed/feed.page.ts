@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PostApiService } from '../../core/post-api.service';
+import { AuthService } from '../../core/auth.service';
 import { LocationApiService } from '../../core/location-api.service';
 import { ApiPost, PostRequest } from '../../core/api-post.model';
 import { ApiLocation } from '../../core/api-location.model';
@@ -18,6 +19,7 @@ import { relativeTime, fullDate, wasEdited } from '../../shared/format';
   templateUrl: './feed.page.html',
 })
 export class FeedPage implements OnInit {
+  readonly auth = inject(AuthService);
   private readonly postApi = inject(PostApiService);
   private readonly locationApi = inject(LocationApiService);
   private readonly form = viewChild(PostFormComponent);

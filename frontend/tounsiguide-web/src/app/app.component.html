@@ -7,9 +7,17 @@
     <nav aria-label="Navigation principale">
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Fil général</a>
     </nav>
-    <span class="demo-badge" title="L'authentification arrive au Sprint 2. Toutes les actions utilisent l'utilisateur de démonstration.">
-      Mode démo
-    </span>
+    <div class="session">
+      @if (auth.user(); as u) {
+        <span class="session-name" [title]="u.email">
+          {{ u.displayName }}@if (auth.isAdmin()) { <span class="role-badge">Admin</span> }
+        </span>
+        <button type="button" class="btn btn-ghost btn-small" (click)="auth.logout()">Se déconnecter</button>
+      } @else {
+        <a class="btn btn-ghost btn-small" routerLink="/login">Se connecter</a>
+        <a class="btn btn-primary btn-small" routerLink="/register">Créer un compte</a>
+      }
+    </div>
   </div>
 </header>
 
@@ -18,5 +26,5 @@
 </main>
 
 <footer class="site-foot muted small">
-  TounsiGuide · Sprint 1 · prototype communautaire
+  © TounsiGuide
 </footer>

@@ -1,8 +1,8 @@
 package com.tounsiguide.communityservice.comment;
 
+import com.tounsiguide.communityservice.common.security.CurrentUser;
 import com.tounsiguide.communityservice.post.Post;
 import com.tounsiguide.communityservice.post.PostRepository;
-import com.tounsiguide.communityservice.post.PostService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,14 +21,9 @@ public class CommentService {
     }
 
     @Transactional
-    public Comment createComment(Long postId, String content) {
+    public Comment createComment(Long postId, String content, CurrentUser user) {
         Post post = findPostOrThrow(postId);
-        Comment comment = new Comment(
-                post,
-                content,
-                PostService.DEMO_AUTHOR_ID,
-                PostService.DEMO_AUTHOR_NAME
-        );
+        Comment comment = new Comment(post, content, user.id(), user.displayName());
         return commentRepository.save(comment);
     }
 
@@ -45,17 +40,19 @@ public class CommentService {
     }
 
     @Transactional
-    public Comment updateComment(Long postId, Long commentId, String content) {
+    public Comment updateComment(Long postId, Long commentId, String content, CurrentUser user) {
         findPostOrThrow(postId);
         Comment comment = findCommentForPostOrThrow(postId, commentId);
+        user.requireAuthor(comment.getAuthorId());
         comment.setContent(content);
         return commentRepository.save(comment);
     }
 
     @Transactional
-    public void deleteComment(Long postId, Long commentId) {
+    public void deleteComment(Long postId, Long commentId, CurrentUser user) {
         findPostOrThrow(postId);
         Comment comment = findCommentForPostOrThrow(postId, commentId);
+        user.requireAuthorOrAdmin(comment.getAuthorId());
         commentRepository.delete(comment);
     }
 

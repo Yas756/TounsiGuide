@@ -3,20 +3,29 @@
   <p class="muted">Recommandations, questions et bons plans partagés par la communauté en Tunisie.</p>
 </section>
 
-<section class="card composer" aria-label="Nouvelle publication">
-  <app-post-form
-    submitLabel="Publier"
-    [locations]="locations()"
-    [locationsUnavailable]="locationsUnavailable()"
-    [busy]="publishing()"
-    [fieldErrors]="publishError()?.details ?? {}"
-    (submitted)="publish($event)" />
-  @if (publishError(); as e) {
-    @if (!(e.code === 'VALIDATION_ERROR')) {
-      <app-error-banner [error]="e" />
+@if (auth.isLoggedIn()) {
+  <section class="card composer" aria-label="Nouvelle publication">
+    <app-post-form
+      submitLabel="Publier"
+      [busy]="publishing()"
+      [fieldErrors]="publishError()?.details ?? {}"
+      (submitted)="publish($event)" />
+    @if (publishError(); as e) {
+      @if (!(e.code === 'VALIDATION_ERROR')) {
+        <app-error-banner [error]="e" />
+      }
     }
-  }
-</section>
+  </section>
+} @else {
+  <section class="card composer-guest" aria-label="Connexion requise">
+    <p><strong>Envie de partager un bon plan ?</strong></p>
+    <p class="muted">Connectez-vous pour publier, commenter et proposer des lieux.</p>
+    <div class="actions actions-small">
+      <a class="btn btn-primary" routerLink="/login">Se connecter</a>
+      <a class="btn btn-ghost" routerLink="/register">Créer un compte</a>
+    </div>
+  </section>
+}
 
 <section aria-label="Publications" aria-live="polite">
   @if (loading()) {
@@ -40,7 +49,7 @@
         </header>
         <p class="post-content">{{ p.content }}</p>
         <footer class="post-foot">
-          <app-location-tag [locationId]="p.locationId" [location]="p.locationId !== null ? locationById().get(p.locationId) : undefined" />
+          <app-location-tag [place]="p.place" [locationId]="p.locationId" [location]="p.locationId !== null ? locationById().get(p.locationId) : undefined" />
           <a class="link" [routerLink]="['/posts', p.id]">Voir la discussion →</a>
         </footer>
       </article>

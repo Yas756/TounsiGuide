@@ -1,6 +1,7 @@
 package com.tounsiguide.communityservice.comment;
 
 import com.tounsiguide.communityservice.comment.dto.CommentResponse;
+import com.tounsiguide.communityservice.common.security.CurrentUser;
 import com.tounsiguide.communityservice.comment.dto.CreateCommentRequest;
 import com.tounsiguide.communityservice.comment.dto.UpdateCommentRequest;
 import jakarta.validation.Valid;
@@ -47,9 +48,10 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<CommentResponse> createComment(
             @PathVariable Long postId,
-            @Valid @RequestBody CreateCommentRequest request
+            @Valid @RequestBody CreateCommentRequest request,
+            CurrentUser user
     ) {
-        Comment comment = commentService.createComment(postId, request.content());
+        Comment comment = commentService.createComment(postId, request.content(), user);
         return ResponseEntity.status(HttpStatus.CREATED).body(commentMapper.toResponse(comment));
     }
 
@@ -57,18 +59,20 @@ public class CommentController {
     public CommentResponse updateComment(
             @PathVariable Long postId,
             @PathVariable Long commentId,
-            @Valid @RequestBody UpdateCommentRequest request
+            @Valid @RequestBody UpdateCommentRequest request,
+            CurrentUser user
     ) {
-        Comment comment = commentService.updateComment(postId, commentId, request.content());
+        Comment comment = commentService.updateComment(postId, commentId, request.content(), user);
         return commentMapper.toResponse(comment);
     }
 
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long postId,
-            @PathVariable Long commentId
+            @PathVariable Long commentId,
+            CurrentUser user
     ) {
-        commentService.deleteComment(postId, commentId);
+        commentService.deleteComment(postId, commentId, user);
         return ResponseEntity.noContent().build();
     }
 }

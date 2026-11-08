@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PostApiService } from '../../core/post-api.service';
+import { AuthService } from '../../core/auth.service';
 import { CommentApiService } from '../../core/comment-api.service';
 import { LocationApiService } from '../../core/location-api.service';
 import { ApiPost, PostRequest } from '../../core/api-post.model';
@@ -23,6 +24,7 @@ import { fullDate, relativeTime, wasEdited } from '../../shared/format';
   templateUrl: './post-detail.page.html',
 })
 export class PostDetailPage {
+  readonly auth = inject(AuthService);
   private readonly postApi = inject(PostApiService);
   private readonly commentApi = inject(CommentApiService);
   private readonly locationApi = inject(LocationApiService);

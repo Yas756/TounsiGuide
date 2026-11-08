@@ -10,24 +10,14 @@
     }
   </label>
 
-  <div class="form-row">
-    <label class="field field-inline">
-      <span class="label">Lieu (facultatif)</span>
-      <select name="locationId" [ngModel]="locationId()" (ngModelChange)="locationId.set($event)"
-              [disabled]="locationsUnavailable()">
-        <option [ngValue]="null">Aucun lieu précis</option>
-        @for (l of locations(); track l.id) {
-          <option [ngValue]="l.id">{{ l.name }}{{ l.city ? ' · ' + l.city : '' }}</option>
-        }
-      </select>
-      @if (locationsUnavailable()) {
-        <span class="hint">Catalogue des lieux indisponible : vous pouvez publier sans lieu.</span>
-      }
-      @if (fieldErrors()['locationId']; as msg) {
-        <span class="field-error">{{ msg }}</span>
-      }
-    </label>
+  <app-place-picker [value]="place()" (valueChange)="place.set($event)" />
+  @for (key of placeErrorKeys; track key) {
+    @if (fieldErrors()[key]; as msg) {
+      <span class="field-error">{{ msg }}</span>
+    }
+  }
 
+  <div class="form-row">
     <div class="form-actions">
       @if (showCancel()) {
         <button type="button" class="btn btn-ghost" (click)="cancelled.emit()" [disabled]="busy()">Annuler</button>

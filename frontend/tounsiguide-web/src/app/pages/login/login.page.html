@@ -1,0 +1,39 @@
+<section class="auth-card card" aria-labelledby="login-title">
+  <h1 id="login-title">Connexion</h1>
+  <p class="muted">Connectez-vous pour publier, commenter et proposer des lieux.</p>
+
+  @if (expired()) {
+    <div class="banner banner-info" role="status">Votre session a expiré. Reconnectez-vous pour continuer.</div>
+  }
+
+  <form (ngSubmit)="submit()">
+    <label class="field">
+      <span class="label">E-mail</span>
+      <input type="email" name="email" autocomplete="email" required
+             [ngModel]="email()" (ngModelChange)="email.set($event)"
+             [attr.aria-invalid]="!!error()?.details?.['email']" />
+      @if (error()?.details?.['email']; as msg) { <span class="field-error">{{ msg }}</span> }
+    </label>
+
+    <label class="field">
+      <span class="label">Mot de passe</span>
+      <input type="password" name="password" autocomplete="current-password" required
+             [ngModel]="password()" (ngModelChange)="password.set($event)"
+             [attr.aria-invalid]="!!error()?.details?.['password']" />
+      @if (error()?.details?.['password']; as msg) { <span class="field-error">{{ msg }}</span> }
+    </label>
+
+    @if (error(); as e) {
+      @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
+    }
+
+    <button type="submit" class="btn btn-primary btn-block" [disabled]="!canSubmit()">
+      {{ busy() ? 'Connexion…' : 'Se connecter' }}
+    </button>
+  </form>
+
+  <p class="auth-switch muted small">
+    Pas encore de compte ?
+    <a class="link" routerLink="/register" [queryParams]="{ returnUrl: returnUrl() }">Créer un compte</a>
+  </p>
+</section>

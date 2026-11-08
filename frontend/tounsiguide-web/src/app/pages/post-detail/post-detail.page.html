@@ -30,8 +30,7 @@
         [showCancel]="true"
         [initialContent]="p.content"
         [initialLocationId]="p.locationId"
-        [locations]="locations()"
-        [locationsUnavailable]="locationsUnavailable()"
+        [initialPlace]="p.place"
         [busy]="saving()"
         [fieldErrors]="saveError()?.details ?? {}"
         (submitted)="save($event)"
@@ -42,13 +41,15 @@
     } @else {
       <p class="post-content">{{ p.content }}</p>
       <footer class="post-foot">
-        <app-location-tag [locationId]="p.locationId" [location]="location()" />
-        <div class="actions">
-          <button type="button" class="btn btn-ghost" (click)="editing.set(true)">Modifier</button>
-          <button type="button" class="btn btn-danger" (click)="deletePost()" [disabled]="deleting()">
-            {{ deleting() ? 'Suppression…' : 'Supprimer' }}
-          </button>
-        </div>
+        <app-location-tag [place]="p.place" [locationId]="p.locationId" [location]="location()" />
+        @if (auth.isOwner(p.authorId)) {
+          <div class="actions">
+            <button type="button" class="btn btn-ghost" (click)="editing.set(true)">Modifier</button>
+            <button type="button" class="btn btn-danger" (click)="deletePost()" [disabled]="deleting()">
+              {{ deleting() ? 'Suppression…' : 'Supprimer' }}
+            </button>
+          </div>
+        }
       </footer>
       <app-error-banner [error]="deleteError()" />
     }
@@ -83,11 +84,13 @@
               </div>
             } @else {
               <p>{{ c.content }}</p>
-              <div class="actions actions-small">
-                <button type="button" class="btn-text" (click)="startEditComment(c)">Modifier</button>
-                <button type="button" class="btn-text danger" (click)="deleteComment(c)"
-                        [disabled]="busyCommentId() === c.id">Supprimer</button>
-              </div>
+              @if (auth.isOwner(c.authorId)) {
+                <div class="actions actions-small">
+                  <button type="button" class="btn-text" (click)="startEditComment(c)">Modifier</button>
+                  <button type="button" class="btn-text danger" (click)="deleteComment(c)"
+                          [disabled]="busyCommentId() === c.id">Supprimer</button>
+                </div>
+              }
             }
           </div>
         </li>
@@ -98,25 +101,32 @@
       }
     </ul>
 
-    <form class="comment-form" (ngSubmit)="addComment()">
-      <label class="field">
-        <span class="label">Ajouter un commentaire</span>
-        <textarea name="comment" rows="2" placeholder="Votre réponse, un conseil, un indice sur le lieu…"
-                  [ngModel]="newComment()" (ngModelChange)="newComment.set($event)"
-                  [attr.aria-invalid]="!!commentError()?.details?.['content']"></textarea>
-        @if (commentError()?.details?.['content']; as msg) {
-          <span class="field-error">{{ msg }}</span>
+    @if (auth.isLoggedIn()) {
+      <form class="comment-form" (ngSubmit)="addComment()">
+        <label class="field">
+          <span class="label">Ajouter un commentaire</span>
+          <textarea name="comment" rows="2" placeholder="Votre réponse, un conseil, un indice sur le lieu…"
+                    [ngModel]="newComment()" (ngModelChange)="newComment.set($event)"
+                    [attr.aria-invalid]="!!commentError()?.details?.['content']"></textarea>
+          @if (commentError()?.details?.['content']; as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+        @if (commentError(); as e) {
+          @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
         }
-      </label>
-      @if (commentError(); as e) {
-        @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
-      }
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="!newComment().trim() || sendingComment()">
-          {{ sendingComment() ? 'Envoi…' : 'Commenter' }}
-        </button>
-      </div>
-    </form>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="!newComment().trim() || sendingComment()">
+            {{ sendingComment() ? 'Envoi…' : 'Commenter' }}
+          </button>
+        </div>
+      </form>
+    } @else {
+      <p class="comment-form muted">
+        <a class="link" routerLink="/login" [queryParams]="{ returnUrl: '/posts/' + postId() }">Connectez-vous</a>
+        pour commenter ou proposer un lieu.
+      </p>
+    }
   </section>
 }
 }

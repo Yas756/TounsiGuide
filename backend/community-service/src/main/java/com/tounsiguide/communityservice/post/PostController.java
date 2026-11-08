@@ -1,5 +1,6 @@
 package com.tounsiguide.communityservice.post;
 
+import com.tounsiguide.communityservice.common.security.CurrentUser;
 import com.tounsiguide.communityservice.post.dto.CreatePostRequest;
 import com.tounsiguide.communityservice.post.dto.PostResponse;
 import com.tounsiguide.communityservice.post.dto.UpdatePostRequest;
@@ -42,23 +43,29 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody CreatePostRequest request) {
-        Post post = postService.createPost(request.content(), request.locationId());
+    public ResponseEntity<PostResponse> createPost(
+            @Valid @RequestBody CreatePostRequest request,
+            CurrentUser user
+    ) {
+        Post post = postService.createPost(
+                request.content(), request.locationId(), request.place(), user);
         return ResponseEntity.status(HttpStatus.CREATED).body(postMapper.toResponse(post));
     }
 
     @PutMapping("/{postId}")
     public PostResponse updatePost(
             @PathVariable Long postId,
-            @Valid @RequestBody UpdatePostRequest request
+            @Valid @RequestBody UpdatePostRequest request,
+            CurrentUser user
     ) {
-        Post post = postService.updatePost(postId, request.content(), request.locationId());
+        Post post = postService.updatePost(
+                postId, request.content(), request.locationId(), request.place(), user);
         return postMapper.toResponse(post);
     }
 
     @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable Long postId) {
-        postService.deletePost(postId);
+    public ResponseEntity<Void> deletePost(@PathVariable Long postId, CurrentUser user) {
+        postService.deletePost(postId, user);
         return ResponseEntity.noContent().build();
     }
 }

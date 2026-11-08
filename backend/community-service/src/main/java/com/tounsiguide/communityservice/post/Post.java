@@ -43,6 +43,24 @@ public class Post {
     @Column(name = "location_id")
     private Long locationId;
 
+    @Size(max = 255)
+    @Column(name = "place_name", length = 255)
+    private String placeName;
+
+    @Size(max = 500)
+    @Column(name = "place_address", length = 500)
+    private String placeAddress;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Size(max = 255)
+    @Column(name = "google_place_id", length = 255)
+    private String googlePlaceId;
+
     @NotNull
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -108,6 +126,46 @@ public class Post {
 
     public void setLocationId(Long locationId) {
         this.locationId = locationId;
+    }
+
+    public String getPlaceName() {
+        return placeName;
+    }
+
+    public String getPlaceAddress() {
+        return placeAddress;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public String getGooglePlaceId() {
+        return googlePlaceId;
+    }
+
+    /** Sets the map place of the post. */
+    public void setPlace(
+            String placeName,
+            String placeAddress,
+            Double latitude,
+            Double longitude,
+            String googlePlaceId
+    ) {
+        this.placeName = placeName;
+        this.placeAddress = placeAddress;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.googlePlaceId = googlePlaceId;
+    }
+
+    /** Removes the map place from the post. */
+    public void clearPlace() {
+        setPlace(null, null, null, null, null);
     }
 
     public Instant getCreatedAt() {

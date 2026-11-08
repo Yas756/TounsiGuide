@@ -56,7 +56,12 @@ a { color: inherit; }
 .topbar nav { display: flex; gap: .25rem; flex: 1; }
 .topbar nav a { text-decoration: none; padding: .35rem .7rem; border-radius: 999px; color: var(--muted); }
 .topbar nav a.active { background: var(--bg); color: var(--ink); font-weight: 600; }
-.demo-badge { font-size: .75rem; border: 1px dashed var(--line); color: var(--muted); padding: .2rem .55rem; border-radius: 999px; cursor: help; }
+/* Session (header) */
+.session { display: flex; align-items: center; gap: .5rem; }
+.session-name { font-size: .9rem; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role-badge { margin-left: .35rem; font-size: .7rem; font-weight: 600; padding: .1rem .4rem; border-radius: 999px; background: var(--brand); color: #fff; }
+.btn-small { padding: .3rem .65rem; font-size: .85rem; }
+.btn-block { width: 100%; text-align: center; margin-top: .4rem; }
 .container { max-width: 720px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
 .site-foot { text-align: center; padding: 1.5rem 1rem; }
 .page-head { margin-bottom: 1rem; }
@@ -90,7 +95,7 @@ a { color: inherit; }
 .field { display: grid; gap: .3rem; margin-bottom: .6rem; }
 .field-inline { margin: 0; flex: 1; min-width: 200px; }
 .label { font-size: .85rem; font-weight: 600; color: var(--muted); }
-textarea, select {
+textarea, select, input {
   width: 100%; font: inherit; color: var(--ink); background: var(--surface);
   border: 1px solid var(--line); border-radius: 8px; padding: .55rem .65rem;
 }
@@ -127,6 +132,31 @@ textarea { resize: vertical; }
 
 @media (max-width: 520px) {
   .topbar-inner { gap: .6rem; }
-  .demo-badge { display: none; }
+  .session-name { display: none; }
   h1 { font-size: 1.35rem; }
 }
+
+/* Authentication pages */
+.auth-card { max-width: 420px; margin: 1.5rem auto; }
+.auth-card h1 { margin-bottom: .35rem; }
+.auth-card form { margin-top: 1rem; }
+.auth-switch { text-align: center; margin: 1rem 0 0; }
+.composer-guest { text-align: center; }
+.composer-guest .actions { justify-content: center; }
+.banner-info { background: var(--bg); border: 1px solid var(--line); color: var(--ink); }
+
+/* Place picker (OpenStreetMap + Leaflet) */
+.place-picker { display: grid; gap: .4rem; margin-bottom: .75rem; }
+.place-chip { display: flex; align-items: center; justify-content: space-between; gap: .75rem; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .45rem .7rem; }
+.place-chip-text { overflow-wrap: anywhere; }
+.place-open { justify-self: start; }
+.place-panel { display: grid; gap: .5rem; }
+.place-search { position: relative; }
+.place-search input { width: 100%; font: inherit; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.place-results { list-style: none; margin: .25rem 0 0; padding: 0; position: absolute; z-index: 1000; left: 0; right: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); max-height: 240px; overflow-y: auto; }
+.place-results button { display: block; width: 100%; text-align: left; font: inherit; background: none; border: 0; padding: .5rem .7rem; color: var(--ink); cursor: pointer; }
+.place-results button:hover, .place-results button:focus-visible { background: var(--bg); }
+.place-map { width: 100%; height: 280px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); z-index: 0; }
+.place-pin svg { width: 28px; height: 36px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35)); }
+.tag-link { text-decoration: none; color: inherit; }
+.tag-link:hover { border-color: var(--brand); }

@@ -1,0 +1,49 @@
+<div class="place-picker">
+  <span class="label">Lieu (facultatif)</span>
+
+  @if (value(); as v) {
+    <div class="place-chip">
+      <span class="place-chip-text">
+        <strong>{{ v.name }}</strong>@if (v.address) {<span class="muted"> · {{ v.address }}</span>}
+      </span>
+      <button type="button" class="btn-text danger" (click)="clear()">Retirer</button>
+    </div>
+  }
+
+  @if (!open()) {
+    <button type="button" class="btn btn-ghost place-open" (click)="open.set(true)">
+      {{ value() ? 'Changer le lieu' : 'Ajouter un lieu' }}
+    </button>
+  } @else {
+    <div class="place-panel">
+      <div class="place-search">
+        <input type="search" name="placeSearch" autocomplete="off"
+               placeholder="Rechercher un lieu en Tunisie…"
+               aria-label="Rechercher un lieu"
+               [value]="query()"
+               (input)="onQuery($any($event.target).value)"
+               (keydown.enter)="$event.preventDefault()" />
+        @if (results().length) {
+          <ul class="place-results" role="listbox">
+            @for (r of results(); track $index) {
+              <li role="option">
+                <button type="button" (click)="choose(r)">
+                  <strong>{{ r.name }}</strong>@if (r.address) {<span class="muted"> · {{ r.address }}</span>}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+      @if (searching()) {
+        <span class="hint">Recherche…</span>
+      } @else if (searchFailed()) {
+        <span class="field-error">La recherche est indisponible pour le moment. Vous pouvez cliquer sur la carte.</span>
+      } @else if (query().trim().length >= 3 && !results().length) {
+        <span class="hint">Aucun résultat. Essayez un autre nom, ou cliquez sur la carte.</span>
+      }
+      <div #mapHost class="place-map" role="application" aria-label="Carte : cliquez pour choisir un lieu"></div>
+      <span class="hint">Cherchez un lieu ci-dessus, ou cliquez directement sur la carte.</span>
+    </div>
+  }
+</div>

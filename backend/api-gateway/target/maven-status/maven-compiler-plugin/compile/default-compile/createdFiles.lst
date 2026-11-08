@@ -1,0 +1,6 @@
+com\tounsiguide\gateway\security\JwtAuthFilter$InvalidTokenException.class
+com\tounsiguide\gateway\config\CorsConfig$OrderedCorsFilter.class
+com\tounsiguide\gateway\security\JwtAuthFilter$UserHeadersRequest.class
+com\tounsiguide\gateway\ApiGatewayApplication.class
+com\tounsiguide\gateway\config\CorsConfig.class
+com\tounsiguide\gateway\security\JwtAuthFilter.class

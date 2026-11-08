@@ -1,0 +1,6 @@
+com\tounsiguide\locationservice\matching\RuleBasedMatchingProviderTest.class
+com\tounsiguide\locationservice\geocoding\PhotonGeocodingProviderTest$MutableClock.class
+com\tounsiguide\locationservice\geocoding\PhotonGeocodingProviderTest.class
+com\tounsiguide\locationservice\location\LocationControllerTest.class
+com\tounsiguide\locationservice\LocationServiceApplicationTests.class
+com\tounsiguide\locationservice\location\LocationServiceTest.class

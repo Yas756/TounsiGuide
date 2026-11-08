@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:identity_test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+tounsiguide:
+  security:
+    jwt:
+      secret: test-secret-test-secret-test-secret-123456
+      issuer: tounsiguide-identity
+      access-token-ttl: 15m
+      refresh-token-ttl: 7d
+    bootstrap-admin:
+      email: admin@tounsiguide.test
+      password: AdminPassword123

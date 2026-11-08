@@ -1,0 +1,7 @@
+com\tounsiguide\communityservice\common\security\CurrentUserTest.class
+com\tounsiguide\communityservice\post\PostControllerTest.class
+com\tounsiguide\communityservice\comment\CommentControllerTest.class
+com\tounsiguide\communityservice\post\PostMapperTest.class
+com\tounsiguide\communityservice\post\PostServiceTest.class
+com\tounsiguide\communityservice\comment\CommentServiceTest.class
+com\tounsiguide\communityservice\CommunityServiceApplicationTests.class

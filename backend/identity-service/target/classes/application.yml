@@ -1,0 +1,34 @@
+server:
+  port: ${SERVER_PORT:8083}
+
+spring:
+  application:
+    name: identity-service
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/tounsiguide_identity?createDatabaseIfNotExist=true&serverTimezone=UTC}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # "update" suffit pour le prototype (Sprint 2). Passer à Flyway/Liquibase avant toute mise en production.
+      ddl-auto: update
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+tounsiguide:
+  security:
+    jwt:
+      # HS256 : le secret doit faire au moins 32 caractères et être PARTAGÉ avec la Gateway (variable d'environnement).
+      secret: ${JWT_SECRET:dev-only-secret-change-me-please-32chars-min}
+      issuer: tounsiguide-identity
+      access-token-ttl: 15m
+      refresh-token-ttl: 7d
+    bootstrap-admin:
+      # Si les deux valeurs sont renseignées, un administrateur est créé au démarrage (s'il n'existe pas).
+      email: ${ADMIN_EMAIL:}
+      password: ${ADMIN_PASSWORD:}

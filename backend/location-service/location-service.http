@@ -1,0 +1,27 @@
+### Search the Location directory (name, alias or city)
+GET http://localhost:8080/api/v1/locations?query=bardo
+
+### Combined search: directory first, then OpenStreetMap results
+GET http://localhost:8080/api/v1/locations/search?query=cafe%20sidi%20bou%20said
+
+### Name of the place under a map click
+GET http://localhost:8080/api/v1/locations/reverse?lat=36.8687&lng=10.3417
+
+### Several Locations at once (used by the feed)
+GET http://localhost:8080/api/v1/locations?ids=1,2,3
+
+### Turn a place chosen on the map into a Location (logged-in member)
+POST http://localhost:8080/api/v1/locations/resolve
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{ "name": "Café des Délices", "city": "Sidi Bou Saïd", "address": "Sidi Bou Saïd, Tunisie",
+  "latitude": 36.8702, "longitude": 10.3492, "externalId": "osm:N123456", "category": "cafe" }
+
+### Add a Location to the directory (admin)
+POST http://localhost:8080/api/v1/locations
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{ "name": "Musée national du Bardo", "city": "Tunis", "latitude": 36.8095, "longitude": 10.1347,
+  "category": "museum", "aliases": ["Bardo", "Musée du Bardo"] }

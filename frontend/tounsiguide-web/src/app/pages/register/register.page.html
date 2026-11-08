@@ -1,0 +1,57 @@
+<section class="auth-card card" aria-labelledby="register-title">
+  <h1 id="register-title">Créer un compte</h1>
+  <p class="muted">Rejoignez la communauté pour partager vos bons plans en Tunisie.</p>
+
+  <form (ngSubmit)="submit()">
+    <label class="field">
+      <span class="label">Nom affiché</span>
+      <input type="text" name="displayName" autocomplete="nickname" required minlength="2" maxlength="60"
+             [ngModel]="displayName()" (ngModelChange)="displayName.set($event)"
+             [attr.aria-invalid]="!!error()?.details?.['displayName']" />
+      @if (error()?.details?.['displayName']; as msg) { <span class="field-error">{{ msg }}</span> }
+    </label>
+
+    <label class="field">
+      <span class="label">E-mail</span>
+      <input type="email" name="email" autocomplete="email" required
+             [ngModel]="email()" (ngModelChange)="email.set($event)"
+             [attr.aria-invalid]="!!error()?.details?.['email']" />
+      @if (error()?.details?.['email']; as msg) { <span class="field-error">{{ msg }}</span> }
+    </label>
+
+    <label class="field">
+      <span class="label">Mot de passe</span>
+      <input type="password" name="password" autocomplete="new-password" required maxlength="72"
+             [ngModel]="password()" (ngModelChange)="password.set($event)"
+             [attr.aria-invalid]="tooShort() || !!error()?.details?.['password']" />
+      @if (tooShort()) {
+        <span class="field-error">{{ minLength }} caractères minimum.</span>
+      } @else if (error()?.details?.['password']) {
+        <span class="field-error">{{ error()?.details?.['password'] }}</span>
+      } @else {
+        <span class="hint">{{ minLength }} caractères minimum.</span>
+      }
+    </label>
+
+    <label class="field">
+      <span class="label">Confirmer le mot de passe</span>
+      <input type="password" name="confirm" autocomplete="new-password" required
+             [ngModel]="confirm()" (ngModelChange)="confirm.set($event)"
+             [attr.aria-invalid]="mismatch()" />
+      @if (mismatch()) { <span class="field-error">Les mots de passe ne correspondent pas.</span> }
+    </label>
+
+    @if (error(); as e) {
+      @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
+    }
+
+    <button type="submit" class="btn btn-primary btn-block" [disabled]="!canSubmit()">
+      {{ busy() ? 'Création…' : 'Créer mon compte' }}
+    </button>
+  </form>
+
+  <p class="auth-switch muted small">
+    Déjà inscrit ?
+    <a class="link" routerLink="/login" [queryParams]="{ returnUrl: returnUrl() }">Se connecter</a>
+  </p>
+</section>

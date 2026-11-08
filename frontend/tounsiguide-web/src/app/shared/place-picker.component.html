@@ -1,0 +1,105 @@
+<div class="place-picker">
+  <span class="label">Lieu (facultatif)</span>
+
+  @if (value(); as v) {
+    <div class="place-chip">
+      <svg class="place-chip-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.3-6-11a6 6 0 0112 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
+      <span class="place-chip-text">
+        <strong>{{ v.name }}</strong>
+        @if (details(v); as d) {<span class="muted"> · {{ d }}</span>}
+      </span>
+      <button type="button" class="btn-text danger" (click)="clear()">Retirer</button>
+    </div>
+  }
+
+  <button type="button" class="btn btn-ghost place-open" (click)="toggle()" [attr.aria-expanded]="open()">
+    {{ open() ? 'Fermer la carte' : value() ? 'Changer le lieu' : 'Ajouter un lieu' }}
+  </button>
+
+  @if (open()) {
+    <div class="place-panel">
+      <div class="place-search">
+        <svg class="place-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        <input type="search" name="placeSearch" autocomplete="off"
+               placeholder="Café, plage, musée, adresse…"
+               aria-label="Rechercher un lieu en Tunisie"
+               [value]="query()"
+               (input)="onQuery($any($event.target).value)"
+               (keydown.enter)="$event.preventDefault()"
+               (keydown.escape)="onQuery('')" />
+
+        @if (results(); as r) {
+          @if (r.directory.length || r.external.length) {
+            <div class="place-results" role="listbox" aria-label="Résultats">
+              @if (r.directory.length) {
+                <div class="place-group">Dans TounsiGuide</div>
+                @for (l of r.directory; track l.id) {
+                  <button type="button" role="option" class="place-result" (click)="chooseKnown(l)">
+                    <span class="place-result-name">{{ l.name }}</span>
+                    <span class="place-result-meta">
+                      @if (categoryLabel(l.category); as c) {<span class="place-cat">{{ c }}</span>}
+                      @if (details(l); as d) {<span class="muted">{{ d }}</span>}
+                    </span>
+                  </button>
+                }
+              }
+              @if (r.external.length) {
+                <div class="place-group">Sur la carte</div>
+                @for (p of r.external; track $index) {
+                  <button type="button" role="option" class="place-result" [disabled]="resolving()" (click)="chooseSuggestion(p)">
+                    <span class="place-result-name">{{ p.name }}</span>
+                    <span class="place-result-meta">
+                      @if (categoryLabel(p.category); as c) {<span class="place-cat">{{ c }}</span>}
+                      @if (details(p); as d) {<span class="muted">{{ d }}</span>}
+                    </span>
+                  </button>
+                }
+              }
+            </div>
+          }
+        }
+      </div>
+
+      @if (searching()) {
+        <span class="hint">Recherche…</span>
+      } @else if (searchFailed()) {
+        <span class="field-error">La recherche est indisponible pour le moment. Vous pouvez cliquer sur la carte.</span>
+      } @else {
+        @if (results(); as r) {
+          @if (!r.directory.length && !r.external.length) {
+            <span class="hint">Aucun résultat. Essayez un autre nom, ou cliquez sur la carte.</span>
+          }
+          @if (!r.externalAvailable) {
+            <span class="hint">La recherche sur la carte ne répond pas : seuls les lieux déjà connus de TounsiGuide sont proposés.</span>
+          }
+        }
+      }
+      @if (resolving()) {
+        <span class="hint">Enregistrement du lieu…</span>
+      }
+      @if (resolveError(); as e) {
+        <span class="field-error">{{ e.message }}</span>
+      }
+
+      @if (pending(); as p) {
+        <div class="place-pending" role="status">
+          <div>
+            <strong>{{ naming() ? 'Recherche du nom…' : p.name }}</strong>
+            @if (!naming() && details(p); as d) {<div class="muted small">{{ d }}</div>}
+          </div>
+          <div class="actions actions-small">
+            <button type="button" class="btn-text" (click)="cancelPending()">Annuler</button>
+            <button type="button" class="btn btn-primary" [disabled]="resolving() || naming()" (click)="chooseSuggestion(p)">Choisir ce lieu</button>
+          </div>
+        </div>
+      }
+
+      @if (mapFailed()) {
+        <span class="hint">La carte ne peut pas s'afficher sur cet appareil. La recherche par nom fonctionne toujours.</span>
+      } @else {
+        <div #mapHost class="place-map" role="application" aria-label="Carte : cliquez pour choisir un lieu"></div>
+        <span class="hint">Cherchez un lieu ci-dessus, ou cliquez sur la carte puis confirmez.</span>
+      }
+    </div>
+  }
+</div>

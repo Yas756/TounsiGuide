@@ -31,7 +31,7 @@ class AuthFlowTest {
     private JsonNode register(String email) throws Exception {
         String body = """
                 {"email":"%s","displayName":"Sara","password":"Password123"}""".formatted(email);
-        MvcResult result = mvc.perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
+        MvcResult result = mvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.user.roles[0]").value("MEMBER"))
                 .andReturn();
@@ -41,7 +41,7 @@ class AuthFlowTest {
     private JsonNode login(String email, String password) throws Exception {
         String body = """
                 {"email":"%s","password":"%s"}""".formatted(email, password);
-        MvcResult result = mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+        MvcResult result = mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andReturn();
         return om.readTree(result.getResponse().getContentAsString());
@@ -52,7 +52,7 @@ class AuthFlowTest {
         JsonNode auth = register("Sara@Example.com");
         String token = auth.get("accessToken").asText();
 
-        mvc.perform(get("/users/me").header("Authorization", "Bearer " + token))
+        mvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("sara@example.com"));
     }
@@ -62,7 +62,7 @@ class AuthFlowTest {
         register("dup@example.com");
         String body = """
                 {"email":"DUP@example.com","displayName":"Autre","password":"Password123"}""";
-        mvc.perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isConflict());
     }
 
@@ -70,7 +70,7 @@ class AuthFlowTest {
     void invalidRegistrationReturnsFieldErrors() throws Exception {
         String body = """
                 {"email":"pas-un-email","displayName":"S","password":"court"}""";
-        mvc.perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.details.email").exists())
                 .andExpect(jsonPath("$.details.password").exists());
@@ -81,19 +81,19 @@ class AuthFlowTest {
         register("login@example.com");
         String body = """
                 {"email":"login@example.com","password":"MauvaisMotDePasse"}""";
-        mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void protectedEndpointWithoutTokenIsUnauthorized() throws Exception {
-        mvc.perform(get("/users/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/users/me")).andExpect(status().isUnauthorized());
     }
 
     @Test
     void memberCannotAccessAdminEndpoints() throws Exception {
         String token = register("member@example.com").get("accessToken").asText();
-        mvc.perform(get("/admin/users").header("Authorization", "Bearer " + token))
+        mvc.perform(get("/api/v1/admin/users").header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
     }
 
@@ -102,11 +102,11 @@ class AuthFlowTest {
         String adminToken = login("admin@tounsiguide.test", "AdminPassword123").get("accessToken").asText();
         String memberId = register("promote@example.com").get("user").get("id").asText();
 
-        mvc.perform(get("/admin/users").header("Authorization", "Bearer " + adminToken))
+        mvc.perform(get("/api/v1/admin/users").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray());
 
-        mvc.perform(put("/admin/users/" + memberId + "/roles")
+        mvc.perform(put("/api/v1/admin/users/" + memberId + "/roles")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"roles\":[\"ADMIN\"]}"))
@@ -119,7 +119,7 @@ class AuthFlowTest {
         JsonNode admin = login("admin@tounsiguide.test", "AdminPassword123");
         String adminId = admin.get("user").get("id").asText();
 
-        mvc.perform(put("/admin/users/" + adminId + "/roles")
+        mvc.perform(put("/api/v1/admin/users/" + adminId + "/roles")
                         .header("Authorization", "Bearer " + admin.get("accessToken").asText())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"roles\":[\"MEMBER\"]}"))
@@ -130,17 +130,17 @@ class AuthFlowTest {
     void refreshRotatesTokenAndReuseIsRejected() throws Exception {
         String oldRefresh = register("refresh@example.com").get("refreshToken").asText();
 
-        MvcResult result = mvc.perform(post("/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+        MvcResult result = mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"" + oldRefresh + "\"}"))
                 .andExpect(status().isOk())
                 .andReturn();
         String newRefresh = om.readTree(result.getResponse().getContentAsString()).get("refreshToken").asText();
 
         // Rejeu de l'ancien token : refusé, et toute la famille de tokens est révoquée
-        mvc.perform(post("/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"" + oldRefresh + "\"}"))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(post("/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"" + newRefresh + "\"}"))
                 .andExpect(status().isUnauthorized());
     }
@@ -150,9 +150,9 @@ class AuthFlowTest {
         String refresh = register("logout@example.com").get("refreshToken").asText();
         String body = "{\"refreshToken\":\"" + refresh + "\"}";
 
-        mvc.perform(post("/auth/logout").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/v1/auth/logout").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isNoContent());
-        mvc.perform(post("/auth/refresh").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isUnauthorized());
     }
 }

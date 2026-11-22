@@ -4,7 +4,7 @@ services:
     container_name: tounsiguide-identity-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: identity_db
+      MYSQL_DATABASE: tounsiguide_identity
     ports:
       - "3306:3306"
     volumes:

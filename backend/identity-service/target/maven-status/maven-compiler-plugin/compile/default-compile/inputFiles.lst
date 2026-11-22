@@ -3,6 +3,7 @@ C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-se
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\config\SecurityProperties.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\controller\AdminUserController.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\controller\AuthController.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\controller\InternalUserController.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\controller\UserController.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\domain\RefreshToken.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\domain\Role.java
@@ -21,6 +22,7 @@ C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-se
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\IdentityServiceApplication.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\repository\RefreshTokenRepository.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\repository\UserRepository.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\security\InternalTokenFilter.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\security\JwtService.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\security\TokenUtils.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\identity-service\src\main\java\com\tounsiguide\identity\service\AuthService.java

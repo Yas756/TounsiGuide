@@ -2,6 +2,8 @@ package com.tounsiguide.communityservice.comment;
 
 import com.tounsiguide.communityservice.common.security.CurrentUser;
 import com.tounsiguide.communityservice.common.security.ForbiddenException;
+import com.tounsiguide.communityservice.location.PostChangeNotifier;
+import com.tounsiguide.communityservice.media.MediaService;
 import com.tounsiguide.communityservice.post.Post;
 import com.tounsiguide.communityservice.post.PostRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +38,12 @@ class CommentServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostChangeNotifier changeNotifier;
+
+    @Mock
+    private MediaService mediaService;
 
     @InjectMocks
     private CommentService commentService;
@@ -53,6 +62,7 @@ class CommentServiceTest {
         assertThat(createdComment.getAuthorId()).isEqualTo("user-1");
         assertThat(createdComment.getAuthorName()).isEqualTo("Sarra");
         verify(commentRepository).save(createdComment);
+        verify(changeNotifier).postChanged(1L);
     }
 
     @Test
@@ -83,6 +93,7 @@ class CommentServiceTest {
 
         assertThat(updatedComment.getContent()).isEqualTo("Updated");
         verify(commentRepository).save(comment);
+        verify(changeNotifier).postChanged(1L);
     }
 
     @Test
@@ -96,6 +107,7 @@ class CommentServiceTest {
         assertThatThrownBy(() -> commentService.updateComment(1L, 10L, "Hacked", STRANGER))
                 .isInstanceOf(ForbiddenException.class);
         verify(commentRepository, never()).save(any(Comment.class));
+        verifyNoInteractions(changeNotifier);
     }
 
     @Test
@@ -123,6 +135,7 @@ class CommentServiceTest {
         commentService.deleteComment(1L, 10L, AUTHOR);
 
         verify(commentRepository).delete(comment);
+        verify(changeNotifier).postChanged(1L);
     }
 
     @Test
@@ -149,6 +162,7 @@ class CommentServiceTest {
         assertThatThrownBy(() -> commentService.deleteComment(1L, 10L, STRANGER))
                 .isInstanceOf(ForbiddenException.class);
         verify(commentRepository, never()).delete(any(Comment.class));
+        verifyNoInteractions(changeNotifier);
     }
 
     @Test
@@ -158,5 +172,59 @@ class CommentServiceTest {
         assertThatThrownBy(() -> commentService.createComment(99L, "Invalid", AUTHOR))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Post not found: 99");
+    }
+
+    // ---------------------------------------------------------------- soft-deleted post (S2-B04)
+
+    private Post deletedPost() {
+        Post post = mock(Post.class);
+        org.mockito.Mockito.lenient().when(post.isDeleted()).thenReturn(true);
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        return post;
+    }
+
+    @Test
+    void theCommentsOfADeletedPostAnswer404ToThePublic() {
+        deletedPost();
+
+        assertThatThrownBy(() -> commentService.getAllCommentsForPost(1L))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage("Post not found: 1");
+        assertThatThrownBy(() -> commentService.getCommentById(1L, 10L))
+                .isInstanceOf(EntityNotFoundException.class);
+        verify(commentRepository, never()).findAllByPostIdOrderByCreatedAtAsc(any());
+    }
+
+    @Test
+    void anAdminCanStillListTheCommentsOfADeletedPost() {
+        Post post = deletedPost();
+        Comment kept = new Comment(post, "Kept", "user-2", "Ali");
+        when(commentRepository.findAllByPostIdOrderByCreatedAtAsc(1L)).thenReturn(List.of(kept));
+
+        assertThat(commentService.getAllCommentsForPost(1L, true)).containsExactly(kept);
+    }
+
+    @Test
+    void nobodyCanCommentOrEditACommentOnADeletedPost() {
+        deletedPost();
+
+        assertThatThrownBy(() -> commentService.createComment(1L, "Late", AUTHOR))
+                .isInstanceOf(EntityNotFoundException.class);
+        assertThatThrownBy(() -> commentService.updateComment(1L, 10L, "Edited", AUTHOR))
+                .isInstanceOf(EntityNotFoundException.class);
+        verify(commentRepository, never()).save(any(Comment.class));
+        verifyNoInteractions(changeNotifier);
+    }
+
+    @Test
+    void theAuthorCanStillDeleteTheirCommentOfADeletedPost() {
+        Post post = deletedPost();
+        when(post.getId()).thenReturn(1L);
+        Comment comment = new Comment(post, "Mine", "user-1", "Sarra");
+        when(commentRepository.findById(10L)).thenReturn(Optional.of(comment));
+
+        commentService.deleteComment(1L, 10L, AUTHOR);
+
+        verify(commentRepository).delete(comment);
     }
 }

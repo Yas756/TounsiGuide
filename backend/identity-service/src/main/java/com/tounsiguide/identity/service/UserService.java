@@ -59,6 +59,19 @@ public class UserService {
         return UserResponse.from(userRepository.save(target));
     }
 
+    /**
+     * Ajoute un rôle en gardant les autres (idempotent). Utilisé par le Business Service pour BUSINESS_REP.
+     * Le nouveau rôle apparaît dans les access tokens émis ensuite (connexion ou refresh).
+     */
+    @Transactional
+    public UserResponse addRole(String targetId, Role role) {
+        User target = find(targetId);
+        if (target.getRoles().add(role)) {
+            target = userRepository.save(target);
+        }
+        return UserResponse.from(target);
+    }
+
     private User find(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> ApiException.notFound("Utilisateur introuvable"));

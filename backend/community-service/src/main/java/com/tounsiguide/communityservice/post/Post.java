@@ -2,6 +2,8 @@ package com.tounsiguide.communityservice.post;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,26 +42,9 @@ public class Post {
     @Column(name = "author_name", nullable = false, length = 150)
     private String authorName;
 
+    /** Id of a Location in the Location &amp; Matching Service (no foreign key: another service owns it). */
     @Column(name = "location_id")
     private Long locationId;
-
-    @Size(max = 255)
-    @Column(name = "place_name", length = 255)
-    private String placeName;
-
-    @Size(max = 500)
-    @Column(name = "place_address", length = 500)
-    private String placeAddress;
-
-    @Column(name = "latitude")
-    private Double latitude;
-
-    @Column(name = "longitude")
-    private Double longitude;
-
-    @Size(max = 255)
-    @Column(name = "google_place_id", length = 255)
-    private String googlePlaceId;
 
     @NotNull
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -68,6 +53,39 @@ public class Post {
     @NotNull
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    /**
+     * PUBLISHED or DELETED (soft delete). Stored as text, not as a MySQL enum, so adding RESTRICTED (Sprint 3)
+     * needs no ALTER TABLE; the database default fills the rows that existed before the column was added.
+     */
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "publication_status", nullable = false, length = 20,
+            columnDefinition = "varchar(20) default 'PUBLISHED'")
+    private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    /** Id of the user (author or administrator) who deleted the post. */
+    @Size(max = 100)
+    @Column(name = "deleted_by", length = 100)
+    private String deletedBy;
+
+    /** Optional topic module (Sprint 3, S3-B08): id of an APPROVED module when it was chosen. */
+    @Column(name = "module_id")
+    private Long moduleId;
+
+    @Column(name = "restricted_at")
+    private Instant restrictedAt;
+
+    @Size(max = 100)
+    @Column(name = "restricted_by", length = 100)
+    private String restrictedBy;
+
+    @Size(max = 1_000)
+    @Column(name = "restriction_reason", length = 1_000)
+    private String restrictionReason;
 
     protected Post() {
         // Required by JPA.
@@ -128,52 +146,75 @@ public class Post {
         this.locationId = locationId;
     }
 
-    public String getPlaceName() {
-        return placeName;
-    }
-
-    public String getPlaceAddress() {
-        return placeAddress;
-    }
-
-    public Double getLatitude() {
-        return latitude;
-    }
-
-    public Double getLongitude() {
-        return longitude;
-    }
-
-    public String getGooglePlaceId() {
-        return googlePlaceId;
-    }
-
-    /** Sets the map place of the post. */
-    public void setPlace(
-            String placeName,
-            String placeAddress,
-            Double latitude,
-            Double longitude,
-            String googlePlaceId
-    ) {
-        this.placeName = placeName;
-        this.placeAddress = placeAddress;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.googlePlaceId = googlePlaceId;
-    }
-
-    /** Removes the map place from the post. */
-    public void clearPlace() {
-        setPlace(null, null, null, null, null);
-    }
-
     public Instant getCreatedAt() {
         return createdAt;
     }
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public PublicationStatus getPublicationStatus() {
+        return publicationStatus;
+    }
+
+    public boolean isDeleted() {
+        return publicationStatus == PublicationStatus.DELETED;
+    }
+
+    /** Soft delete: the row, its comments and media stay; the post is hidden from everyone but administrators. */
+    public void markDeleted(String userId) {
+        this.publicationStatus = PublicationStatus.DELETED;
+        this.deletedAt = Instant.now();
+        this.deletedBy = userId;
+    }
+
+    public Long getModuleId() {
+        return moduleId;
+    }
+
+    public void setModuleId(Long moduleId) {
+        this.moduleId = moduleId;
+    }
+
+    public boolean isRestricted() {
+        return publicationStatus == PublicationStatus.RESTRICTED;
+    }
+
+    public boolean isPublished() {
+        return publicationStatus == PublicationStatus.PUBLISHED;
+    }
+
+    /** Moderation (S3-B07): hidden platform-wide until an administrator restores it. */
+    public void markRestricted(String adminId, String reason) {
+        this.publicationStatus = PublicationStatus.RESTRICTED;
+        this.restrictedAt = Instant.now();
+        this.restrictedBy = adminId;
+        this.restrictionReason = reason;
+    }
+
+    /** Undoes {@link #markRestricted}; the decision history keeps who restricted it and why. */
+    public void restore() {
+        this.publicationStatus = PublicationStatus.PUBLISHED;
+        this.restrictedAt = null;
+        this.restrictedBy = null;
+        this.restrictionReason = null;
+    }
+
+    public Instant getRestrictedAt() {
+        return restrictedAt;
+    }
+
+    public String getRestrictionReason() {
+        return restrictionReason;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public String getDeletedBy() {
+        return deletedBy;
     }
 
     @Override
@@ -217,6 +258,7 @@ public class Post {
                 ", locationId=" + locationId +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", publicationStatus=" + publicationStatus +
                 '}';
     }
 }

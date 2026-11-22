@@ -17,8 +17,15 @@ export function fullDate(isoDate: string): string {
   return new Date(isoDate).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
 }
 
+/** Up to two initials, from the first letter of each word: "Sarra (démo)" → "SD", "Ali" → "A". */
 export function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).map(p => p[0]).join('').slice(0, 2).toUpperCase() || '?';
+  return (name ?? '')
+    .split(/\s+/)
+    .map(word => word.match(/\p{L}|\p{N}/u)?.[0] ?? '')
+    .filter(Boolean)
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || '?';
 }
 
 /** True when the resource was edited after creation (ignores sub-second drift). */

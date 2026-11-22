@@ -1,49 +1,20 @@
 import { Component, DestroyRef, effect, ElementRef, inject, input, output, signal, untracked, viewChild } from '@angular/core';
-import * as L from 'leaflet';
-import { ApiPlace } from '../core/api-place.model';
+import { Subscription } from 'rxjs';
+import type { Map as MapLibreMap, Marker } from 'maplibre-gl';
+import { ApiLocation, categoryLabel, PlaceSearchResponse, PlaceSuggestion, placeDetails } from '../core/api-location.model';
+import { LocationApiService } from '../core/location-api.service';
+import { toUiError, UiError } from '../core/api-error.model';
+import { createMap, createPin, distanceMeters } from './map';
 
-/** Center of the map until a place is chosen: Tunis. */
-const TUNIS: L.LatLngTuple = [36.8065, 10.1815];
-/** Free OpenStreetMap-based geocoder with search-as-you-type (fair use, no key). */
-const PHOTON_URL = 'https://photon.komoot.io';
-/** Search is limited to Tunisia: minLon,minLat,maxLon,maxLat. */
-const TUNISIA_BBOX = '7.5,30.2,11.6,37.6';
-
-const PIN = L.divIcon({
-  className: 'place-pin',
-  html: '<svg viewBox="0 0 28 36" aria-hidden="true"><path fill="#c8102e" d="M14 0C6.3 0 0 6.2 0 13.9 0 24.4 14 36 14 36s14-11.6 14-22.1C28 6.2 21.7 0 14 0z"/><circle cx="14" cy="14" r="5" fill="#fff"/></svg>',
-  iconSize: [28, 36],
-  iconAnchor: [14, 36],
-});
-
-interface PhotonFeature {
-  geometry: { coordinates: [number, number] };
-  properties: {
-    name?: string;
-    housenumber?: string;
-    street?: string;
-    district?: string;
-    locality?: string;
-    city?: string;
-    county?: string;
-    state?: string;
-    country?: string;
-  };
-}
-
-function toPlace(feature: PhotonFeature): ApiPlace {
-  const p = feature.properties;
-  const [longitude, latitude] = feature.geometry.coordinates;
-  const street = [p.housenumber, p.street].filter(Boolean).join(' ');
-  const city = p.city ?? p.locality ?? p.district ?? p.county ?? p.state;
-  const name = p.name ?? (street || city) ?? `Lieu choisi (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
-  const address = [street, city, p.country].filter(part => part && part !== name).join(', ') || null;
-  return { name, address, latitude, longitude, googlePlaceId: null };
-}
+/** A map click this close to a named place picks that place (its name, position and OpenStreetMap id). */
+const SNAP_METERS = 60;
+const SEARCH_DELAY_MS = 300;
+const MIN_QUERY_LENGTH = 2;
 
 /**
- * Lets the author attach a place to a post: search by name (suggestions appear while typing),
- * or click on the map. Map: OpenStreetMap through Leaflet. Search: Photon. No API key needed.
+ * Lets the author attach a place to a post: search by name (TounsiGuide directory first, then
+ * OpenStreetMap), or click on the map and confirm. The chosen place always becomes a Location of the
+ * Location & Matching Service, and the post only keeps its id.
  */
 @Component({
   selector: 'app-place-picker',
@@ -51,146 +22,214 @@ function toPlace(feature: PhotonFeature): ApiPlace {
   templateUrl: './place-picker.component.html',
 })
 export class PlacePickerComponent {
-  readonly value = input<ApiPlace | null>(null);
-  readonly valueChange = output<ApiPlace | null>();
+  private readonly locationApi = inject(LocationApiService);
+
+  readonly value = input<ApiLocation | null>(null);
+  /** Field label and button text, so the picker can also be used to mention a place in a comment. */
+  readonly label = input('Lieu (facultatif)');
+  readonly addLabel = input('Ajouter un lieu');
+  readonly valueChange = output<ApiLocation | null>();
 
   protected readonly open = signal(false);
   protected readonly query = signal('');
-  protected readonly results = signal<ApiPlace[]>([]);
+  protected readonly results = signal<PlaceSearchResponse | null>(null);
   protected readonly searching = signal(false);
   protected readonly searchFailed = signal(false);
+  /** A place clicked on the map, waiting for the author's confirmation. */
+  protected readonly pending = signal<PlaceSuggestion | null>(null);
+  protected readonly naming = signal(false);
+  protected readonly resolving = signal(false);
+  protected readonly resolveError = signal<UiError | null>(null);
+  protected readonly mapFailed = signal(false);
+
+  protected readonly details = placeDetails;
+  protected readonly categoryLabel = categoryLabel;
 
   private readonly mapHost = viewChild<ElementRef<HTMLElement>>('mapHost');
-  private map?: L.Map;
-  private marker?: L.Marker;
+  private map?: MapLibreMap;
+  private marker?: Marker;
+  private mapStarting = false;
+  private destroyed = false;
   private searchTimer?: ReturnType<typeof setTimeout>;
-  private searchAbort?: AbortController;
+  private searchSub?: Subscription;
+  private reverseSub?: Subscription;
 
   constructor() {
     // Build the map the first time the panel is shown.
     effect(() => {
       const host = this.mapHost();
-      if (this.open() && host && !this.map) {
-        untracked(() => this.initMap(host.nativeElement));
+      if (this.open() && host && !this.map && !this.mapStarting) {
+        untracked(() => void this.initMap(host.nativeElement));
       }
     });
-    // Keep the marker in sync with the chosen place (also when the form is reset).
+    // Keep the pin on the chosen place (also when the form is reset).
     effect(() => {
       const place = this.value();
-      untracked(() => this.showOnMap(place));
+      untracked(() => void this.showChosen(place));
     });
     inject(DestroyRef).onDestroy(() => {
+      this.destroyed = true;
       clearTimeout(this.searchTimer);
-      this.searchAbort?.abort();
+      this.searchSub?.unsubscribe();
+      this.reverseSub?.unsubscribe();
       this.map?.remove();
     });
   }
 
+  protected toggle(): void {
+    this.open.update(open => !open);
+  }
+
   protected clear(): void {
+    this.pending.set(null);
     this.valueChange.emit(null);
   }
 
   protected onQuery(text: string): void {
     this.query.set(text);
     clearTimeout(this.searchTimer);
-    this.searchAbort?.abort();
+    this.searchSub?.unsubscribe();
     this.searchFailed.set(false);
-    if (text.trim().length < 3) {
-      this.results.set([]);
+    if (text.trim().length < MIN_QUERY_LENGTH) {
+      this.results.set(null);
       this.searching.set(false);
       return;
     }
-    // Wait for a pause in typing: the free public server asks for fair use.
-    this.searchTimer = setTimeout(() => void this.search(text.trim()), 350);
-  }
-
-  protected choose(place: ApiPlace): void {
-    this.results.set([]);
-    this.query.set('');
-    this.valueChange.emit(place);
-  }
-
-  private async search(text: string): Promise<void> {
-    this.searchAbort = new AbortController();
     this.searching.set(true);
-    const params = new URLSearchParams({
-      q: text,
-      limit: '6',
-      lang: 'fr',
-      bbox: TUNISIA_BBOX,
-      lat: String(TUNIS[0]),
-      lon: String(TUNIS[1]),
-    });
-    try {
-      const response = await fetch(`${PHOTON_URL}/api/?${params.toString()}`, { signal: this.searchAbort.signal });
-      if (!response.ok) throw new Error(`Photon answered ${response.status}`);
-      const data = (await response.json()) as { features: PhotonFeature[] };
-      this.results.set(data.features.map(toPlace));
-      this.searching.set(false);
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') return; // replaced by a newer search
-      this.results.set([]);
-      this.searchFailed.set(true);
-      this.searching.set(false);
-    }
+    // Wait for a pause in typing: fewer requests, and the results do not flicker.
+    this.searchTimer = setTimeout(() => this.search(text.trim()), SEARCH_DELAY_MS);
   }
 
-  private initMap(host: HTMLElement): void {
+  protected chooseKnown(location: ApiLocation): void {
+    this.closeSearch();
+    this.pending.set(null);
+    this.valueChange.emit(location);
+  }
+
+  /** A place from OpenStreetMap or a map click: stored (or found) in the Location service first. */
+  protected chooseSuggestion(place: PlaceSuggestion): void {
+    this.resolving.set(true);
+    this.resolveError.set(null);
+    this.locationApi.resolve(place).subscribe({
+      next: location => {
+        this.resolving.set(false);
+        this.closeSearch();
+        this.pending.set(null);
+        this.valueChange.emit(location);
+      },
+      error: err => {
+        this.resolving.set(false);
+        this.resolveError.set(toUiError(err));
+      },
+    });
+  }
+
+  protected cancelPending(): void {
+    this.pending.set(null);
+    this.reverseSub?.unsubscribe();
+    void this.showChosen(this.value());
+  }
+
+  private search(text: string): void {
+    const center = this.map?.getCenter();
+    const near = center ? { latitude: center.lat, longitude: center.lng } : undefined;
+    this.searchSub = this.locationApi.search(text, near).subscribe({
+      next: response => {
+        this.results.set(response);
+        this.searching.set(false);
+      },
+      error: () => {
+        this.results.set(null);
+        this.searchFailed.set(true);
+        this.searching.set(false);
+      },
+    });
+  }
+
+  private closeSearch(): void {
+    clearTimeout(this.searchTimer);
+    this.searchSub?.unsubscribe();
+    this.query.set('');
+    this.results.set(null);
+    this.searching.set(false);
+  }
+
+  private async initMap(host: HTMLElement): Promise<void> {
+    this.mapStarting = true;
     const current = this.value();
-    this.map = L.map(host, {
-      center: current ? [current.latitude, current.longitude] : TUNIS,
-      zoom: current ? 15 : 11,
-    });
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(this.map);
-    this.map.on('click', (event: L.LeafletMouseEvent) =>
-      void this.pickFromPoint(event.latlng.lat, event.latlng.lng),
-    );
-    this.showOnMap(current);
-  }
-
-  /** A click on the map: the name and address come from reverse geocoding. */
-  private async pickFromPoint(latitude: number, longitude: number): Promise<void> {
-    // Show the pin at once; the name is filled in as soon as the server answers.
-    const fallback = `Lieu choisi (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
-    let place: ApiPlace = { name: fallback, address: null, latitude, longitude, googlePlaceId: null };
-    this.valueChange.emit(place);
+    const hasPoint = current?.latitude != null && current?.longitude != null;
     try {
-      const params = new URLSearchParams({ lat: String(latitude), lon: String(longitude), lang: 'fr' });
-      const response = await fetch(`${PHOTON_URL}/reverse?${params.toString()}`);
-      if (!response.ok) return;
-      const data = (await response.json()) as { features: PhotonFeature[] };
-      if (!data.features.length) return;
-      // Keep the clicked position, take only the name and the address of the nearest feature.
-      place = { ...toPlace(data.features[0]), latitude, longitude };
-      // Ignore the answer if the user has already picked something else meanwhile.
-      const now = this.value();
-      if (now && now.latitude === latitude && now.longitude === longitude) {
-        this.valueChange.emit(place);
+      const map = await createMap(host, {
+        center: hasPoint ? [current!.longitude!, current!.latitude!] : undefined,
+        zoom: hasPoint ? 15 : 11,
+      });
+      if (this.destroyed) {
+        map.remove();
+        return;
       }
+      this.map = map;
+      map.on('click', event => this.pickFromPoint(event.lngLat.lat, event.lngLat.lng));
+      map.on('error', () => this.mapFailed.set(!map.isStyleLoaded()));
+      await this.showChosen(current);
     } catch {
-      // Offline or server busy: the coordinates stay as the label.
+      this.mapFailed.set(true); // WebGL unavailable or the library could not load: search still works
+    } finally {
+      this.mapStarting = false;
     }
   }
 
-  private showOnMap(place: ApiPlace | null): void {
+  /** A click on the map: pin at once, then ask the Location service what is there. */
+  private pickFromPoint(latitude: number, longitude: number): void {
+    const clicked: [number, number] = [longitude, latitude];
+    this.resolveError.set(null);
+    this.pending.set({
+      name: 'Lieu choisi sur la carte',
+      address: null,
+      city: null,
+      latitude,
+      longitude,
+      category: null,
+      externalId: null,
+    });
+    void this.movePin(clicked, false);
+    this.naming.set(true);
+    this.reverseSub?.unsubscribe();
+    this.reverseSub = this.locationApi.reverse(latitude, longitude).subscribe({
+      next: nearest => {
+        this.naming.set(false);
+        if (!nearest) return;
+        const near = distanceMeters(clicked, [nearest.longitude, nearest.latitude]) <= SNAP_METERS;
+        // Close to a named place: take it. Otherwise keep the clicked point and only borrow the address.
+        const place: PlaceSuggestion = near
+          ? nearest
+          : { ...this.pending()!, address: [nearest.name, nearest.address].filter(Boolean).join(', '), city: nearest.city };
+        this.pending.set(place);
+        void this.movePin([place.longitude, place.latitude], false);
+      },
+      error: () => this.naming.set(false), // the coordinates are enough to confirm
+    });
+  }
+
+  private async showChosen(place: ApiLocation | null): Promise<void> {
     if (!this.map) return;
-    if (!place) {
+    if (!place || place.latitude === null || place.longitude === null) {
       this.marker?.remove();
       this.marker = undefined;
       return;
     }
-    const position: L.LatLngTuple = [place.latitude, place.longitude];
-    if (this.marker) {
-      this.marker.setLatLng(position);
+    await this.movePin([place.longitude, place.latitude], true);
+  }
+
+  private async movePin(lngLat: [number, number], fly: boolean): Promise<void> {
+    if (!this.map) return;
+    if (!this.marker) {
+      this.marker = await createPin(lngLat);
+      this.marker.addTo(this.map);
     } else {
-      this.marker = L.marker(position, { icon: PIN, title: 'Lieu choisi' }).addTo(this.map);
+      this.marker.setLngLat(lngLat);
     }
-    this.map.panTo(position);
-    if (this.map.getZoom() < 14) {
-      this.map.setZoom(15);
+    if (fly) {
+      this.map.flyTo({ center: lngLat, zoom: Math.max(this.map.getZoom(), 15), essential: true });
     }
   }
 }

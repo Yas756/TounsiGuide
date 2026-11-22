@@ -2,16 +2,25 @@
   <div class="topbar-inner">
     <a class="brand" routerLink="/">
       <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="var(--brand)"/><path d="M16 7c-4 0-7 3-7 7 0 5.5 7 11 7 11s7-5.5 7-11c0-4-3-7-7-7z" fill="#fff"/><circle cx="16" cy="14" r="2.8" fill="var(--brand)"/></svg>
-      <span>Tounsi<b>Guide</b></span>
+      <span class="brand-copy"><strong>Tounsi<b>Guide</b></strong><small>Le guide de la communauté</small></span>
     </a>
     <nav aria-label="Navigation principale">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Fil général</a>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Découvrir</a>
+      <a routerLink="/feed" routerLinkActive="active">Fil général</a>
+      <a routerLink="/pages" routerLinkActive="active">Pages pro</a>
+      <a routerLink="/modules" routerLinkActive="active">Modules</a>
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin" routerLinkActive="active">Administration</a>
+      }
     </nav>
+    <form class="topbar-search" role="search" (submit)="search($event, q.value); q.value = ''">
+      <input #q type="search" name="q" placeholder="Rechercher…" aria-label="Rechercher des lieux, des pages et des publications" />
+    </form>
     <div class="session">
       @if (auth.user(); as u) {
-        <span class="session-name" [title]="u.email">
-          {{ u.displayName }}@if (auth.isAdmin()) { <span class="role-badge">Admin</span> }
-        </span>
+        <a class="session-name" routerLink="/account" [title]="u.email + ' · Mon compte'">
+          {{ u.displayName }}@if (auth.isAdmin()) { <span class="role-badge">Admin</span> } @else if (auth.hasRole('BUSINESS_REP')) { <span class="role-badge">Représentant</span> }
+        </a>
         <button type="button" class="btn btn-ghost btn-small" (click)="auth.logout()">Se déconnecter</button>
       } @else {
         <a class="btn btn-ghost btn-small" routerLink="/login">Se connecter</a>
@@ -24,6 +33,26 @@
 <main class="container">
   <router-outlet />
 </main>
+
+@if (auth.isLoggedIn()) {
+  <div class="quick-create">
+    <button class="quick-create-trigger" type="button" aria-label="Créer" title="Créer" aria-describedby="quick-create-hint">+</button>
+    <div class="quick-create-menu" id="quick-create-hint">
+      <a class="quick-create-item" routerLink="/create-post">
+        <strong>Nouvelle publication</strong>
+        <span>Partager dans le fil général</span>
+      </a>
+      <a class="quick-create-item" routerLink="/business/requests">
+        <strong>Demander une page</strong>
+        <span>Page officielle de votre établissement</span>
+      </a>
+      <a class="quick-create-item" routerLink="/suggest-module">
+        <strong>Suggérer un module</strong>
+        <span>Proposer un nouveau thème</span>
+      </a>
+    </div>
+  </div>
+}
 
 <footer class="site-foot muted small">
   © TounsiGuide

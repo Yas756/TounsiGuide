@@ -1,5 +1,16 @@
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\association\AssociationControllerTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\association\AssociationScorerTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\association\AssociationServiceTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\common\security\InternalTokenFilterTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\community\CommunityClientTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\contract\LocationContractTest.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\geocoding\PhotonGeocodingProviderTest.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\location\LocationControllerTest.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\location\LocationServiceTest.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\LocationServiceApplicationTests.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\matching\analysis\AnalyzerSelectionTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\matching\analysis\AssociationAnalyzerContractTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\matching\analysis\GuardedAssociationAnalyzerTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\matching\analysis\MentionFinderTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\matching\analysis\RuleBasedAssociationAnalyzerTest.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\location-service\src\test\java\com\tounsiguide\locationservice\matching\RuleBasedMatchingProviderTest.java

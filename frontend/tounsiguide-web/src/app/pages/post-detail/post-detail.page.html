@@ -1,4 +1,4 @@
-<a class="link back" routerLink="/">← Retour au fil</a>
+<a class="link back" routerLink="/feed">← Retour au fil</a>
 
 @if (loading()) {
   <div class="card skeleton" aria-hidden="true"><div></div><div></div><div></div></div>
@@ -6,127 +6,230 @@
 } @else if (notFound()) {
   <div class="card empty">
     <p><strong>Cette publication n'existe pas ou a été supprimée.</strong></p>
-    <a class="btn btn-primary" routerLink="/">Revenir au fil</a>
+    <a class="btn btn-primary" routerLink="/feed">Revenir au fil</a>
   </div>
 } @else if (loadError()) {
   <app-error-banner [error]="loadError()" [retryable]="true" (retry)="load()" />
 } @else {
-@if (post(); as p) {
-  <article class="card post post-detail">
-    <header class="post-head">
-      <app-avatar [name]="p.authorName" />
-      <div>
-        <strong>{{ p.authorName }}</strong>
-        <span class="muted"> · {{ fullDate(p.createdAt) }}</span>
-        @if (wasEdited(p.createdAt, p.updatedAt)) {
-          <span class="muted"> · modifié {{ relativeTime(p.updatedAt) }}</span>
-        }
+  @if (post(); as p) {
+    @if (p.publicationStatus === 'DELETED') {
+      <div class="banner banner-info" role="status">Publication supprimée : seuls les administrateurs la voient encore.</div>
+    }
+    @if (isRestricted()) {
+      <div class="banner banner-error" role="status">
+        Publication restreinte par un modérateur : elle n'apparaît plus dans le fil ni sur les murs des pages.
+        Seuls son auteur et les administrateurs la voient encore.
       </div>
-    </header>
-
-    @if (editing()) {
-      <app-post-form
-        submitLabel="Enregistrer"
-        [showCancel]="true"
-        [initialContent]="p.content"
-        [initialLocationId]="p.locationId"
-        [initialPlace]="p.place"
-        [busy]="saving()"
-        [fieldErrors]="saveError()?.details ?? {}"
-        (submitted)="save($event)"
-        (cancelled)="cancelEdit()" />
-      @if (saveError(); as e) {
-        @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
-      }
-    } @else {
-      <p class="post-content">{{ p.content }}</p>
-      <footer class="post-foot">
-        <app-location-tag [place]="p.place" [locationId]="p.locationId" [location]="location()" />
-        @if (auth.isOwner(p.authorId)) {
-          <div class="actions">
-            <button type="button" class="btn btn-ghost" (click)="editing.set(true)">Modifier</button>
-            <button type="button" class="btn btn-danger" (click)="deletePost()" [disabled]="deleting()">
-              {{ deleting() ? 'Suppression…' : 'Supprimer' }}
-            </button>
-          </div>
-        }
-      </footer>
-      <app-error-banner [error]="deleteError()" />
     }
-  </article>
-
-  <section class="card comments" aria-labelledby="comments-title">
-    <h2 id="comments-title">Discussion <span class="muted">({{ comments().length }})</span></h2>
-    <p class="muted small">Vous connaissez le lieu dont il est question ? Dites-le en commentaire : l'auteur pourra le confirmer.</p>
-
-    @if (commentsError(); as e) {
-      <app-error-banner [error]="e" [retryable]="true" (retry)="reloadComments()" />
-    }
-    <app-error-banner [error]="commentActionError()" />
-
-    <ul class="comment-list">
-      @for (c of sortedComments(); track c.id) {
-        <li class="comment">
-          <app-avatar [name]="c.authorName" />
-          <div class="comment-body">
-            <div>
-              <strong>{{ c.authorName }}</strong>
-              <span class="muted" [title]="fullDate(c.createdAt)"> · {{ relativeTime(c.createdAt) }}</span>
-              @if (wasEdited(c.createdAt, c.updatedAt)) { <span class="muted"> · modifié</span> }
-            </div>
-            @if (editingCommentId() === c.id) {
-              <textarea rows="2" [ngModel]="editedComment()" (ngModelChange)="editedComment.set($event)"
-                        aria-label="Modifier le commentaire"></textarea>
-              <div class="actions">
-                <button type="button" class="btn btn-ghost" (click)="editingCommentId.set(null)">Annuler</button>
-                <button type="button" class="btn btn-primary" (click)="saveComment(c)"
-                        [disabled]="!editedComment().trim() || busyCommentId() === c.id">Enregistrer</button>
+    <div class="detail-layout">
+      <div class="detail-main">
+        <article class="card post post-detail" aria-labelledby="post-detail-title">
+          <header class="post-detail-head">
+            <div class="post-head">
+              <app-avatar [name]="p.authorName" />
+              <div class="post-author">
+                <strong>{{ p.authorName }}</strong>
+                <span class="muted small">{{ fullDate(p.createdAt) }}@if (wasEdited(p.createdAt, p.updatedAt)) { · modifié {{ relativeTime(p.updatedAt) }} }</span>
               </div>
+            </div>
+            @if (p.moduleSlug) {
+              <a class="post-kicker module-chip" [routerLink]="['/modules', p.moduleSlug]">{{ p.moduleName }}</a>
             } @else {
-              <p>{{ c.content }}</p>
-              @if (auth.isOwner(c.authorId)) {
-                <div class="actions actions-small">
-                  <button type="button" class="btn-text" (click)="startEditComment(c)">Modifier</button>
-                  <button type="button" class="btn-text danger" (click)="deleteComment(c)"
-                          [disabled]="busyCommentId() === c.id">Supprimer</button>
+              <span class="post-kicker">Publication</span>
+            }
+          </header>
+
+          @if (editing()) {
+            <div class="detail-editing">
+              <div class="form-card-heading">
+                <div>
+                  <span class="card-kicker">Modifier</span>
+                  <h2>Mettre à jour la publication</h2>
+                </div>
+              </div>
+              <app-post-form
+                submitLabel="Enregistrer"
+                [showCancel]="true"
+                [initialContent]="p.content"
+                [initialLocation]="location() ?? null"
+                [initialModuleId]="p.moduleId ?? null"
+                [initialMedia]="p.media"
+                [busy]="saving()"
+                [fieldErrors]="saveError()?.details ?? {}"
+                (submitted)="save($event)"
+                (cancelled)="cancelEdit()" />
+              @if (saveError(); as e) {
+                @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
+              }
+            </div>
+          } @else {
+            <h1 id="post-detail-title" class="sr-only">Publication de {{ p.authorName }}</h1>
+            <p class="post-content post-detail-content">{{ p.content }}</p>
+            <app-media-gallery [media]="p.media" />
+            <footer class="post-detail-footer">
+              <div class="post-place" aria-label="Lieu de la publication">
+                <app-location-tag [locationId]="p.locationId" [location]="location()" />
+              </div>
+              @if (!isDeleted() && !isRestricted()) {
+                <app-like-button [postId]="p.id" [summary]="postLike()" />
+                <app-report-button targetType="POST" [targetId]="p.id" [authorId]="p.authorId" />
+              }
+              @if (auth.isOwner(p.authorId) && !isDeleted() && !isRestricted()) {
+                <div class="actions">
+                  <button type="button" class="btn btn-ghost" (click)="editing.set(true)">Modifier</button>
+                  <button type="button" class="btn btn-danger" (click)="deletePost()" [disabled]="deleting()">
+                    {{ deleting() ? 'Suppression…' : 'Supprimer' }}
+                  </button>
                 </div>
               }
-            }
-          </div>
-        </li>
-      } @empty {
-        @if (!commentsError()) {
-          <li class="muted">Aucun commentaire pour l'instant. Lancez la discussion.</li>
-        }
-      }
-    </ul>
-
-    @if (auth.isLoggedIn()) {
-      <form class="comment-form" (ngSubmit)="addComment()">
-        <label class="field">
-          <span class="label">Ajouter un commentaire</span>
-          <textarea name="comment" rows="2" placeholder="Votre réponse, un conseil, un indice sur le lieu…"
-                    [ngModel]="newComment()" (ngModelChange)="newComment.set($event)"
-                    [attr.aria-invalid]="!!commentError()?.details?.['content']"></textarea>
-          @if (commentError()?.details?.['content']; as msg) {
-            <span class="field-error">{{ msg }}</span>
+            </footer>
+            <app-error-banner [error]="deleteError()" />
           }
-        </label>
-        @if (commentError(); as e) {
-          @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
-        }
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary" [disabled]="!newComment().trim() || sendingComment()">
-            {{ sendingComment() ? 'Envoi…' : 'Commenter' }}
-          </button>
+        </article>
+
+        <section class="card comments" aria-labelledby="comments-title">
+          <div class="section-heading comments-heading">
+            <div>
+              <p class="eyebrow">Échange</p>
+              <h2 id="comments-title">Discussion <span class="muted">({{ comments().length }})</span></h2>
+            </div>
+            <span class="muted small">Vos réponses enrichissent la publication.</span>
+          </div>
+          <p class="muted small comments-intro">Vous connaissez le lieu dont il est question ? Mentionnez-le avec votre commentaire : l'auteur pourra le confirmer.</p>
+
+          @if (commentsError(); as e) {
+            <app-error-banner [error]="e" [retryable]="true" (retry)="reloadComments()" />
+          }
+          <app-error-banner [error]="commentActionError()" />
+
+          <ul class="comment-list">
+            @for (c of sortedComments(); track c.id) {
+              <li class="comment" [id]="'comment-' + c.id">
+                <app-avatar [name]="c.authorName" />
+                <div class="comment-body">
+                  <div>
+                    <strong>{{ c.authorName }}</strong>
+                    <span class="muted small" [title]="fullDate(c.createdAt)"> · {{ relativeTime(c.createdAt) }}</span>
+                    @if (wasEdited(c.createdAt, c.updatedAt)) { <span class="muted small"> · modifié</span> }
+                  </div>
+                  @if (editingCommentId() === c.id) {
+                    <textarea rows="2" [attr.maxlength]="commentMax" [ngModel]="editedComment()" (ngModelChange)="editedComment.set($event)"
+                              aria-label="Modifier le commentaire"></textarea>
+                    <span class="hint char-count">{{ editedComment().length }} / {{ commentMax }}</span>
+                    <div class="actions">
+                      <button type="button" class="btn btn-ghost" (click)="editingCommentId.set(null)">Annuler</button>
+                      <button type="button" class="btn btn-primary" (click)="saveComment(c)"
+                              [disabled]="!editedComment().trim() || busyCommentId() === c.id">Enregistrer</button>
+                    </div>
+                  } @else {
+                    @if (c.publicationStatus === 'RESTRICTED') {
+                      <p class="pill pill-deleted comment-restricted">Commentaire restreint par un modérateur : visible seulement par vous et les administrateurs.</p>
+                    }
+                    <p>{{ c.content }}</p>
+                    <app-media-gallery [media]="c.media" [compact]="true" />
+                    @if (placesByComment().get(c.id); as places) {
+                      <div class="comment-places">
+                        @for (pl of places; track pl.name) {
+                          <span class="tag" [title]="'Lieu mentionné · ' + pl.status">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.3-6-11a6 6 0 0112 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
+                            {{ pl.name }}<span class="muted">&nbsp;· {{ pl.status }}</span>
+                          </span>
+                        }
+                      </div>
+                    }
+                    @if (!isDeleted() && !isRestricted() && c.publicationStatus !== 'RESTRICTED') {
+                      <div class="comment-actions">
+                        <app-like-button [postId]="p.id" [commentId]="c.id" [summary]="commentLikes().get(c.id)" [compact]="true" />
+                        <app-report-button targetType="COMMENT" [targetId]="c.id" [authorId]="c.authorId" />
+                      </div>
+                    }
+                    @if (auth.isOwner(c.authorId) && !isDeleted() && !isRestricted()) {
+                      <div class="actions actions-small">
+                        <button type="button" class="btn-text" (click)="startEditComment(c)">Modifier</button>
+                        <button type="button" class="btn-text danger" (click)="deleteComment(c)"
+                                [disabled]="busyCommentId() === c.id">Supprimer</button>
+                      </div>
+                    }
+                  }
+                </div>
+              </li>
+            } @empty {
+              @if (!commentsError()) {
+                <li class="comment-empty muted">Aucun commentaire pour l'instant. Lancez la discussion.</li>
+              }
+            }
+          </ul>
+
+          @if (isDeleted()) {
+            <p class="comment-login muted">Publication supprimée : la discussion est fermée.</p>
+          } @else if (isRestricted()) {
+            <p class="comment-login muted">Publication restreinte : la discussion est fermée.</p>
+          } @else if (auth.isLoggedIn()) {
+            <form class="comment-form" (ngSubmit)="addComment()">
+              <label class="field">
+                <span class="label">Votre réponse</span>
+                <textarea name="comment" rows="2" [attr.maxlength]="commentMax" aria-describedby="comment-count"
+                          placeholder="Un conseil, un indice sur le lieu, une question…"
+                          [ngModel]="newComment()" (ngModelChange)="newComment.set($event)"
+                          [attr.aria-invalid]="!!commentError()?.details?.['content']"></textarea>
+                <span id="comment-count" class="hint char-count" [class.near-limit]="newComment().length > commentMax - 100">
+                  {{ newComment().length }} / {{ commentMax }}
+                </span>
+                @if (commentError()?.details?.['content']; as msg) {
+                  <span class="field-error">{{ msg }}</span>
+                }
+              </label>
+              <app-media-picker [maxItems]="commentLimits.maxItems" [maxVideos]="commentLimits.maxVideos"
+                                [disabled]="sendingComment()" />
+              @if (commentError()?.details?.['mediaIds']; as msg) {
+                <span class="field-error">{{ msg }}</span>
+              }
+              @if (!isAuthor()) {
+                <app-place-picker
+                  label="Lieu mentionné (facultatif)"
+                  addLabel="Mentionner un lieu"
+                  [value]="commentPlace()"
+                  (valueChange)="commentPlace.set($event)" />
+              }
+              @if (commentError(); as e) {
+                @if (e.code !== 'VALIDATION_ERROR') { <app-error-banner [error]="e" /> }
+              }
+              @if (suggestError(); as m) { <div class="banner banner-error" role="alert">{{ m }}</div> }
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" [disabled]="!newComment().trim() || sendingComment() || commentMediaBlocking()">
+                  {{ sendingComment() ? 'Envoi…' : 'Publier la réponse' }}
+                </button>
+              </div>
+            </form>
+          } @else {
+            <p class="comment-login muted">
+              <a class="link" routerLink="/login" [queryParams]="{ returnUrl: '/posts/' + postId() }">Connectez-vous</a>
+              pour commenter ou proposer un lieu.
+            </p>
+          }
+        </section>
+      </div>
+
+      <aside class="detail-side" aria-label="Lieu et vérification">
+        <div class="side-heading">
+          <p class="eyebrow">Contexte</p>
+          <h2>Lieu et vérification</h2>
+          <p class="muted small">Les propositions et preuves liées à cette publication.</p>
         </div>
-      </form>
-    } @else {
-      <p class="comment-form muted">
-        <a class="link" routerLink="/login" [queryParams]="{ returnUrl: '/posts/' + postId() }">Connectez-vous</a>
-        pour commenter ou proposer un lieu.
-      </p>
-    }
-  </section>
-}
+        <app-post-places
+          [associations]="associations()"
+          [loading]="associationsLoading()"
+          [error]="associationsError()"
+          [comments]="comments()"
+          [isAuthor]="isAuthor()"
+          [postAuthorId]="post()?.authorId ?? null"
+          [loggedIn]="auth.isLoggedIn()"
+          (changed)="loadAssociations(true)"
+          (retry)="loadAssociations()" />
+        @if (confirmedLocationId(); as locationId) {
+          <app-official-page-link [locationId]="locationId" />
+        }
+      </aside>
+    </div>
+  }
 }

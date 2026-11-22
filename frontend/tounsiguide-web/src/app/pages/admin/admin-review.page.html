@@ -1,0 +1,143 @@
+<div class="filter-row" role="group" aria-label="Filtrer la file">
+  <button type="button" class="chip" [class.active]="filter() === 'ALL'" (click)="setFilter('ALL')">Tout</button>
+  <button type="button" class="chip" [class.active]="filter() === 'DISPUTED'" (click)="setFilter('DISPUTED')">Contestées</button>
+  <button type="button" class="chip" [class.active]="filter() === 'PROPOSED'" (click)="setFilter('PROPOSED')">Proposées</button>
+</div>
+
+@if (notice(); as n) { <div class="banner banner-info" role="status">{{ n }}</div> }
+
+@if (loading()) {
+  <div class="card skeleton" aria-busy="true"><div></div><div></div><div></div></div>
+} @else if (unavailable()) {
+  <div class="card empty">
+    <p><strong>La file de révision n'est pas encore disponible.</strong></p>
+    <p class="muted small">Le service des associations (location-service) ne répond pas encore sur <code>/api/v1/associations</code>.</p>
+    <button type="button" class="btn btn-ghost" (click)="load(0)">Réessayer</button>
+  </div>
+} @else if (error()) {
+  <app-error-banner [error]="error()" [retryable]="true" (retry)="load(0)" />
+} @else { @if (page(); as p) {
+  <p class="muted small">{{ p.totalElements }} association(s) à examiner. Les contestées d'abord, puis les scores les plus bas.</p>
+  <ul class="review-list">
+    @for (a of p.items; track a.id) {
+      <li class="card review-item" [class.open]="openId() === a.id">
+        <button type="button" class="review-summary" (click)="toggle(a)" [attr.aria-expanded]="openId() === a.id">
+          <span class="score" [class]="scoreClass(a.score)" [attr.aria-label]="'Score ' + a.score + ' sur 100'">{{ a.score }}</span>
+          <span class="review-main">
+            <strong>{{ a.location.name }}</strong>@if (a.location.city) { <span class="muted">, {{ a.location.city }}</span> }
+            <span class="muted small review-meta">
+              Publication n° {{ a.postId }} · {{ originLabelOf(a) }} · {{ ago(a.createdAt) }}
+            </span>
+            @if (a.postDeleted) { <span class="pill pill-deleted">{{ postDeletedLabel }}</span> }
+          </span>
+          <span class="status status-{{ a.status | lowercase }}">{{ statusLabel[a.status] }}</span>
+        </button>
+
+        @if (openId() === a.id) {
+          <div class="review-detail">
+            @if (detailLoading()) {
+              <div class="skeleton" aria-busy="true"><div></div><div></div><div></div></div>
+            } @else if (detailError()) {
+              <app-error-banner [error]="detailError()" />
+            } @else { @if (detail(); as d) {
+              <section>
+                <h3>Publication</h3>
+                @if (d.association.postDeleted || d.post?.publicationStatus === 'DELETED') {
+                  <p class="small"><span class="pill pill-deleted">{{ postDeletedLabel }}</span>
+                    <span class="muted">L'association est conservée pour l'historique ; vous pouvez la retirer.</span></p>
+                }
+                @if (d.post; as post) {
+                  <blockquote class="quote">
+                    <p class="post-content">{{ post.content }}</p>
+                    <footer class="muted small">{{ post.authorName }} · {{ date(post.createdAt) }} ·
+                      <a class="link" [routerLink]="['/posts', post.id]" target="_blank">ouvrir</a></footer>
+                  </blockquote>
+                } @else {
+                  <p class="muted small">Publication introuvable (supprimée ou service communautaire indisponible).</p>
+                }
+              </section>
+
+              <section>
+                <h3>Confiance</h3>
+                <div class="meter" role="img" [attr.aria-label]="'Score ' + d.association.score + ' sur 100'">
+                  <span [class]="scoreClass(d.association.score)" [style.width.%]="d.association.score"></span>
+                </div>
+                <p class="small">
+                  <strong>{{ d.association.score }} / 100</strong> que cette publication appartienne à ce lieu.
+                  @if (d.association.forced) { <span class="pill">Forcée</span> }
+                </p>
+                @if (d.association.analysis; as an) {
+                  <div class="analysis">
+                    <p class="small"><span class="pos">Pour {{ an.supportScore }}</span> · <span class="neg">Contre {{ an.opposeScore }}</span>
+                      <span class="muted"> · analyse {{ an.provider }}</span></p>
+                    <p>{{ an.reasoning }}</p>
+                  </div>
+                }
+              </section>
+
+              <section>
+                <h3>Éléments</h3>
+                <ul class="evidence">
+                  @for (ev of d.association.evidence ?? []; track ev.id) {
+                    <li [class.oppose]="ev.direction === 'OPPOSE'">
+                      <span class="ev-sign" aria-hidden="true">{{ ev.direction === 'OPPOSE' ? '−' : '+' }}{{ ev.weight }}</span>
+                      <div>
+                        <strong>{{ evidenceLabel(ev.type) }}</strong>
+                        <span class="muted small"> · {{ ev.actorName ?? 'système' }} · {{ ago(ev.createdAt) }}</span>
+                        @if (ev.note) { <p class="small">« {{ displayText(ev.note) }} »</p> }
+                      </div>
+                    </li>
+                  } @empty {
+                    <li class="muted small">Aucun élément enregistré.</li>
+                  }
+                </ul>
+              </section>
+
+              @if (d.history.length) {
+                <section>
+                  <h3>Historique</h3>
+                  <ol class="history small">
+                    @for (h of d.history; track $index) {
+                      <li>{{ h.fromStatus ? statusLabel[h.fromStatus] : '—' }} → {{ statusLabel[h.toStatus] }}
+                        <span class="muted">· {{ h.actorRole ?? 'système' }} · {{ ago(h.createdAt) }}</span>
+                        @if (h.reason) { <span> · « {{ displayText(h.reason) }} »</span> }
+                      </li>
+                    }
+                  </ol>
+                </section>
+              }
+
+              <section class="decision">
+                <h3>Décision</h3>
+                <label class="field">
+                  <span class="label">Motif (obligatoire, gardé dans l'historique)</span>
+                  <textarea rows="2" maxlength="500" [ngModel]="reason()" (ngModelChange)="reason.set($event)"
+                            placeholder="Ex. : l'enseigne est visible sur la photo"></textarea>
+                </label>
+                <app-error-banner [error]="decideError()" />
+                <div class="actions">
+                  <button type="button" class="btn btn-danger" [disabled]="!reason().trim() || !!deciding()" (click)="decide('REMOVE')">
+                    {{ deciding() === 'REMOVE' ? '…' : 'Retirer' }}</button>
+                  <button type="button" class="btn btn-ghost" [disabled]="!reason().trim() || !!deciding()" (click)="decide('FORCE')"
+                          title="Confirme et verrouille : les nouveaux éléments ne rouvriront plus le dossier">
+                    {{ deciding() === 'FORCE' ? '…' : 'Forcer' }}</button>
+                  <button type="button" class="btn btn-primary" [disabled]="!reason().trim() || !!deciding()" (click)="decide('VALIDATE')">
+                    {{ deciding() === 'VALIDATE' ? '…' : 'Valider' }}</button>
+                </div>
+              </section>
+            } }
+          </div>
+        }
+      </li>
+    } @empty {
+      <li class="card empty">Rien à examiner pour le moment.</li>
+    }
+  </ul>
+  @if (p.totalPages > 1) {
+    <nav class="pager" aria-label="Pages">
+      <button type="button" class="btn btn-ghost btn-small" [disabled]="p.page === 0" (click)="load(p.page - 1)">Précédent</button>
+      <span class="muted small">Page {{ p.page + 1 }} / {{ p.totalPages }}</span>
+      <button type="button" class="btn btn-ghost btn-small" [disabled]="p.page + 1 >= p.totalPages" (click)="load(p.page + 1)">Suivant</button>
+    </nav>
+  }
+} }

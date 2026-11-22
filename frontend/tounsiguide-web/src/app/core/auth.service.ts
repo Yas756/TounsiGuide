@@ -7,11 +7,11 @@ import { AuthResponse, AuthUser, LoginRequest, RegisterRequest, Role } from './a
 
 /**
  * Routes of the Identity Service as exposed by the Gateway (see AUTH_CONTRACT.md).
- * If the Gateway publishes them under another prefix (for example /api/v1/auth),
+ * The prefix follows the sprint contract (/api/v1/...). If it ever changes,
  * change these two constants only.
  */
-export const AUTH_PATH = '/auth';
-export const USERS_PATH = '/users';
+export const AUTH_PATH = '/api/v1/auth';
+export const USERS_PATH = '/api/v1/users';
 
 const REFRESH_KEY = 'tounsiguide.refreshToken';
 

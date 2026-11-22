@@ -45,7 +45,7 @@ public class AuthService {
         if (userRepository.existsByEmail(email)) {
             throw ApiException.conflict("Un compte existe déjà avec cet email");
         }
-        // Toute inscription publique donne uniquement le rôle MEMBER : ADMIN s'attribue via /admin/users.
+        // Toute inscription publique donne uniquement le rôle MEMBER : ADMIN s'attribue via /api/v1/admin/users.
         User user = new User(email, request.displayName().trim(),
                 passwordEncoder.encode(request.password()), EnumSet.of(Role.MEMBER));
         userRepository.save(user);

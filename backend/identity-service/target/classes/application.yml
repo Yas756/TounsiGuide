@@ -2,17 +2,28 @@ server:
   port: ${SERVER_PORT:8083}
 
 spring:
+  # Error bodies never show a stack trace, the exception or its message (devtools turns them on otherwise).
+  web:
+    error:
+      include-stacktrace: never
+      include-exception: false
+      include-message: never
   application:
     name: identity-service
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/tounsiguide_identity?createDatabaseIfNotExist=true&serverTimezone=UTC}
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:}
+  flyway:
+    # A database built earlier by ddl-auto=update (tables, no flyway_schema_history) is marked as version 1
+    # without running V1__baseline.sql, so existing data is kept. An empty database is created by V1.
+    baseline-on-migrate: true
+    baseline-version: 1
   jpa:
     open-in-view: false
     hibernate:
-      # "update" suffit pour le prototype (Sprint 2). Passer à Flyway/Liquibase avant toute mise en production.
-      ddl-auto: update
+      # S3-B09: the schema belongs to Flyway (db/migration); Hibernate only checks that the entities match it.
+      ddl-auto: validate
 
 management:
   endpoints:
@@ -28,6 +39,8 @@ tounsiguide:
       issuer: tounsiguide-identity
       access-token-ttl: 15m
       refresh-token-ttl: 7d
+    # Secret partagé avec la Gateway et les autres services (en-tête X-Internal-Token). Exigé sur /internal/**.
+    internal-token: ${INTERNAL_TOKEN:dev-only-internal-token-change-me}
     bootstrap-admin:
       # Si les deux valeurs sont renseignées, un administrateur est créé au démarrage (s'il n'existe pas).
       email: ${ADMIN_EMAIL:}

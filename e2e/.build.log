@@ -1,0 +1,48 @@
+
+> mvn.cmd -q -DskipTests package   (in e2e\.stack\community-service)
+Picked up JAVA_TOOL_OPTIONS: -Djdk.net.unixdomain.tmpdir=C:/Users/Public/tg-e2e
+  -> C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\e2e\.stack\community-service\target\community-service-0.0.1-SNAPSHOT.jar
+
+> mvn.cmd -q -DskipTests package   (in e2e\.stack\business-service)
+Picked up JAVA_TOOL_OPTIONS: -Djdk.net.unixdomain.tmpdir=C:/Users/Public/tg-e2e
+  -> C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\e2e\.stack\business-service\target\business-service-0.0.1-SNAPSHOT.jar
+
+> node.exe "C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\frontend\tounsiguide-web\node_modules\@angular\cli\bin\ng.js" build --configuration e2e --output-path "C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\e2e\.stack\web"   (in frontend\tounsiguide-web)
+[33m❯[39m Building...
+[32m✔[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                 [2m | [22m [1mRaw size[22m
+[32mchunk-DF463HC6.js[39m  [2m | [22m[2m-[22m                     [2m | [22m  [36m1.04 MB[39m[2m | [22m
+[32mchunk-QO5ZBERI.js[39m  [2m | [22m[2m-[22m                     [2m | [22m[36m255.89 kB[39m[2m | [22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m                [2m | [22m[36m127.75 kB[39m[2m | [22m
+[32mpolyfills.js[39m       [2m | [22m[2mpolyfills[22m             [2m | [22m [36m90.20 kB[39m[2m | [22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m                  [2m | [22m [36m16.50 kB[39m[2m | [22m
+[32mchunk-JCLYJQ2L.js[39m  [2m | [22m[2m-[22m                     [2m | [22m  [36m4.46 kB[39m[2m | [22m
+[32mchunk-R2QGWZ7S.js[39m  [2m | [22m[2m-[22m                     [2m | [22m  [36m2.01 kB[39m[2m | [22m
+[32mchunk-7HJZFMPQ.js[39m  [2m | [22m[2m-[22m                     [2m | [22m[36m187 bytes[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m         [2m | [22m  [1m1.54 MB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                 [2m | [22m [1mRaw size[22m
+[32mchunk-VAZDCGLJ.js[39m  [2m | [22m[2mmaplibre-gl[22m           [2m | [22m  [36m1.50 MB[39m[2m | [22m
+[32mchunk-D6ZDDTMG.js[39m  [2m | [22m[2m-[22m                     [2m | [22m[36m200.44 kB[39m[2m | [22m
+[32mchunk-JLM6ZW3W.js[39m  [2m | [22m[2mpost-detail-page[22m      [2m | [22m [36m92.44 kB[39m[2m | [22m
+[32mchunk-6AMV23VO.js[39m  [2m | [22m[2mbusiness-page-page[22m    [2m | [22m [36m54.98 kB[39m[2m | [22m
+[32mchunk-E4RGXQOV.js[39m  [2m | [22m[2madmin-review-page[22m     [2m | [22m [36m34.31 kB[39m[2m | [22m
+[32mchunk-2PPDPKIV.js[39m  [2m | [22m[2m-[22m                     [2m | [22m [36m31.06 kB[39m[2m | [22m
+[32mchunk-NI3WLE3M.js[39m  [2m | [22m[2m-[22m                     [2m | [22m [36m30.96 kB[39m[2m | [22m
+[32mchunk-QXMBEPH6.js[39m  [2m | [22m[2madmin-reports-page[22m    [2m | [22m [36m30.48 kB[39m[2m | [22m
+[32mchunk-E4LFOVGL.js[39m  [2m | [22m[2m-[22m                     [2m | [22m [36m25.63 kB[39m[2m | [22m
+[32mchunk-MFZA76B5.js[39m  [2m | [22m[2madmin-locations-page[22m  [2m | [22m [36m24.41 kB[39m[2m | [22m
+[32mchunk-PABS5SXO.js[39m  [2m | [22m[2mbusiness-requests-page[22m[2m | [22m [36m22.49 kB[39m[2m | [22m
+[32mchunk-R45TUREW.js[39m  [2m | [22m[2madmin-business-page[22m   [2m | [22m [36m22.46 kB[39m[2m | [22m
+[32mchunk-LJPGQ4KL.js[39m  [2m | [22m[2madmin-modules-page[22m    [2m | [22m [36m22.14 kB[39m[2m | [22m
+[32mchunk-JYPTKJRU.js[39m  [2m | [22m[2mmodule-detail-page[22m    [2m | [22m [36m19.84 kB[39m[2m | [22m
+[32mchunk-TBX67PTM.js[39m  [2m | [22m[2msearch-page[22m           [2m | [22m [36m19.75 kB[39m[2m | [22m
+[2m...and 36 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [3.748 seconds]
+
+Output location: C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\e2e\.stack\web
+
+
+E2E stack built in C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\e2e\.stack

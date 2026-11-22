@@ -1,0 +1,16 @@
+{
+  "name": "tounsiguide-e2e",
+  "private": true,
+  "description": "S3-T01: the Sprint 3 demo, automated end to end with Playwright on an isolated stack.",
+  "type": "module",
+  "scripts": {
+    "build-stack": "node scripts/build-stack.mjs",
+    "stack": "node scripts/start-stack.mjs",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}

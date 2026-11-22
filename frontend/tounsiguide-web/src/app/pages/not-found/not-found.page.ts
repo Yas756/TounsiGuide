@@ -8,7 +8,7 @@ import { RouterLink } from '@angular/router';
   template: `
     <div class="card empty">
       <p><strong>Cette page n'existe pas.</strong></p>
-      <a class="btn btn-primary" routerLink="/">Revenir au fil général</a>
+      <a class="btn btn-primary" routerLink="/feed">Revenir au fil général</a>
     </div>
   `,
 })

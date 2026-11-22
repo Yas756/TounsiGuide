@@ -1,7 +1,7 @@
 # TounsiGuide Web (Angular)
 
 Angular front end for TounsiGuide. It replaces the `ribbit-angular` prototype and follows
-`docs/milestones/Sprint_1_Integration_Milestone_and_Frontend_Rules.md`.
+`doc-log/6-guides/Sprint_1_Integration_Milestone_and_Frontend_Rules.md` (outside the code folder).
 
 ## Run
 

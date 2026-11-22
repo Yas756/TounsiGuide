@@ -2,8 +2,8 @@ package com.tounsiguide.communityservice.comment;
 
 import com.tounsiguide.communityservice.comment.dto.CommentResponse;
 import com.tounsiguide.communityservice.common.error.GlobalExceptionHandler;
+import com.tounsiguide.communityservice.media.MediaService;
 import com.tounsiguide.communityservice.post.Post;
-import com.tounsiguide.communityservice.post.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,18 +29,21 @@ class CommentControllerTest {
     @Mock
     private CommentMapper commentMapper;
 
+    @Mock
+    private MediaService mediaService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new CommentController(commentService, commentMapper))
+        mockMvc = MockMvcBuilders.standaloneSetup(new CommentController(commentService, commentMapper, mediaService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
     void getAllCommentsReturnsOk() throws Exception {
-        when(commentService.getAllCommentsForPost(1L)).thenReturn(List.of());
+        when(commentService.getAllCommentsForPost(1L, false, null)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/posts/1/comments").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
@@ -48,18 +51,28 @@ class CommentControllerTest {
 
     @Test
     void getCommentByIdReturnsOk() throws Exception {
-        Post post = new Post("A post", PostService.DEMO_AUTHOR_ID,
-                PostService.DEMO_AUTHOR_NAME, null);
-        Comment comment = new Comment(post, "A comment", PostService.DEMO_AUTHOR_ID,
-                PostService.DEMO_AUTHOR_NAME);
+        Post post = new Post("A post", "user-1",
+                "Sarra", null);
+        Comment comment = new Comment(post, "A comment", "user-1",
+                "Sarra");
         CommentResponse response = new CommentResponse(
-                10L, 1L, "A comment", PostService.DEMO_AUTHOR_ID,
-                PostService.DEMO_AUTHOR_NAME, Instant.now(), Instant.now()
+                10L, 1L, "A comment", "user-1",
+                "Sarra", Instant.now(), Instant.now(), List.of()
         );
         when(commentService.getCommentById(1L, 10L)).thenReturn(comment);
-        when(commentMapper.toResponse(comment)).thenReturn(response);
+        when(commentMapper.toResponse(comment, List.of())).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/posts/1/comments/10").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void anAdminListsTheCommentsEvenOfADeletedPost() throws Exception {
+        when(commentService.getAllCommentsForPost(1L, true, null)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/posts/1/comments").header("X-User-Roles", "ADMIN"))
+                .andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(commentService).getAllCommentsForPost(1L, true, null);
     }
 }

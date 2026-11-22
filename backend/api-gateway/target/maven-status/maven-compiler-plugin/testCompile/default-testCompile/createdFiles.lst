@@ -1,2 +1,9 @@
-com\tounsiguide\gateway\security\JwtAuthFilterTest.class
+com\tounsiguide\gateway\MediaProxyTest.class
 com\tounsiguide\gateway\ApiGatewayApplicationTests.class
+com\tounsiguide\gateway\RouteOrderTest.class
+com\tounsiguide\gateway\config\CorsConfigTest.class
+com\tounsiguide\gateway\RouteOrderTest$Backend.class
+com\tounsiguide\gateway\security\JwtAuthFilterTest.class
+com\tounsiguide\gateway\config\ServiceUnavailableFilterTest.class
+com\tounsiguide\gateway\ServiceDownTest.class
+com\tounsiguide\gateway\MediaProxyTest$CommunityStub.class

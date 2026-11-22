@@ -18,16 +18,16 @@ export ADMIN_PASSWORD="ChangeMe12345"
 mvn spring-boot:run
 ```
 
-Le service écoute sur `http://localhost:8081` (variable `SERVER_PORT`). La base `identity_db` est créée automatiquement.
+Le service écoute sur `http://localhost:8083` (variable `SERVER_PORT`). La base `tounsiguide_identity` est créée automatiquement.
 Variables utiles : `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
 
 ## Essai rapide
 
 ```bash
-curl -s -X POST localhost:8081/auth/register -H 'Content-Type: application/json' \
+curl -s -X POST localhost:8083/api/v1/auth/register -H 'Content-Type: application/json' \
   -d '{"email":"sara@example.com","displayName":"Sara","password":"Password123"}'
 
-curl -s localhost:8081/users/me -H "Authorization: Bearer <accessToken>"
+curl -s localhost:8083/api/v1/users/me -H "Authorization: Bearer <accessToken>"
 ```
 
 ## Tests

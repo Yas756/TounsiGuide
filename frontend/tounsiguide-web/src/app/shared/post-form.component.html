@@ -1,21 +1,68 @@
 <form class="post-form" (ngSubmit)="submit()">
-  <label class="field">
-    <span class="label">Votre recommandation, question ou expérience</span>
-    <textarea name="content" rows="4" required
-              placeholder="Un café calme pour travailler à Tunis ? Une plage peu connue ? Partagez-le ici."
-              [ngModel]="content()" (ngModelChange)="content.set($event)"
-              [attr.aria-invalid]="!!fieldErrors()['content']"></textarea>
-    @if (fieldErrors()['content']; as msg) {
-      <span class="field-error">{{ msg }}</span>
-    }
-  </label>
+  <section class="form-section">
+    <div class="form-section-heading">
+      <span class="step-index">01</span>
+      <div>
+        <span class="label">Votre publication</span>
+        <p class="hint">Commencez par l'idée ou l'expérience que vous souhaitez transmettre.</p>
+      </div>
+    </div>
+    <label class="field">
+      <span class="sr-only">Votre recommandation, question ou expérience</span>
+      <textarea name="content" rows="5" required [attr.maxlength]="maxLength" aria-describedby="post-content-count"
+                placeholder="Un café calme pour travailler à Tunis ? Une plage peu connue ? Partagez-le ici."
+                [ngModel]="content()" (ngModelChange)="content.set($event)"
+                [attr.aria-invalid]="!!fieldErrors()['content']"></textarea>
+      <span id="post-content-count" class="hint char-count" [class.near-limit]="content().length > maxLength - 100">
+        {{ content().length }} / {{ maxLength }}
+      </span>
+      @if (fieldErrors()['content']; as msg) {
+        <span class="field-error">{{ msg }}</span>
+      }
+    </label>
+  </section>
 
-  <app-place-picker [value]="place()" (valueChange)="place.set($event)" />
-  @for (key of placeErrorKeys; track key) {
-    @if (fieldErrors()[key]; as msg) {
+  <section class="form-section form-section-secondary">
+    <div class="form-section-heading">
+      <span class="step-index">02</span>
+      <div>
+        <span class="label">Ajouter du contexte <span class="muted">(facultatif)</span></span>
+        <p class="hint">Un média ou un lieu aide la communauté à mieux comprendre.</p>
+      </div>
+    </div>
+    <app-media-picker
+      [initialMedia]="initialMedia()"
+      [maxItems]="limits.maxItems"
+      [maxVideos]="limits.maxVideos"
+      [disabled]="busy()" />
+    @if (fieldErrors()['mediaIds']; as msg) {
       <span class="field-error">{{ msg }}</span>
     }
-  }
+
+    <app-place-picker [value]="location()" (valueChange)="location.set($event)" />
+    @if (fieldErrors()['locationId']) {
+      <span class="field-error">Ce lieu n'existe plus. Choisissez-en un autre.</span>
+    }
+  </section>
+
+  <section class="form-section-secondary" aria-label="Module thématique">
+    <div class="form-section-heading">
+      <span class="step-index">03</span>
+      <div>
+        <label class="label" for="post-module">Module thématique (facultatif)</label>
+        <p class="hint">La publication reste dans le fil général et apparaît aussi dans le module choisi.</p>
+      </div>
+    </div>
+    <select id="post-module" name="moduleId" [value]="moduleId() ?? ''" (change)="setModule($any($event.target).value)"
+            [attr.aria-invalid]="!!fieldErrors()['moduleId']">
+      <option value="">Aucun module</option>
+      @for (m of modules(); track m.id) {
+        <option [value]="m.id" [selected]="m.id === moduleId()">{{ m.icon ? m.icon + ' ' : '' }}{{ m.name }}</option>
+      }
+    </select>
+    @if (modulesFailed()) { <span class="hint">Les modules ne sont pas disponibles pour le moment : vous pouvez publier sans.</span> }
+    @if (fieldErrors()['moduleId']; as msg) { <span class="field-error">Ce module n'est plus disponible. Choisissez-en un autre.</span> }
+  </section>
 
   <div class="form-row">
     <div class="form-actions">
@@ -23,7 +70,7 @@
         <button type="button" class="btn btn-ghost" (click)="cancelled.emit()" [disabled]="busy()">Annuler</button>
       }
       <button type="submit" class="btn btn-primary" [disabled]="!canSubmit()">
-        {{ busy() ? 'Envoi…' : submitLabel() }}
+        {{ busy() ? 'Envoi…' : mediaBlocking() ? (picker()?.uploading() ? 'Envoi des fichiers…' : 'Retirez le fichier en erreur') : submitLabel() }}
       </button>
     </div>
   </div>

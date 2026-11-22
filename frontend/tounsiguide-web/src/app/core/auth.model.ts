@@ -1,5 +1,11 @@
-/** Global roles carried by the Identity Service (Sprint 2). */
-export type Role = 'MEMBER' | 'ADMIN';
+/**
+ * Global roles carried by the Identity Service. BUSINESS_REP (Sprint 3) is added when a page request is approved;
+ * it appears in the next access token (after a new login). Rights on one page come from its members list.
+ */
+export type Role = 'MEMBER' | 'ADMIN' | 'BUSINESS_REP';
+
+/** French labels of the global roles. */
+export const ROLE_LABEL: Record<string, string> = { MEMBER: 'Membre', ADMIN: 'Administrateur', BUSINESS_REP: 'Représentant' };
 
 /** User as returned by the Identity Service (UserResponse). */
 export interface AuthUser {
@@ -21,7 +27,7 @@ export interface RegisterRequest {
   password: string;
 }
 
-/** Body returned by POST /auth/register (201), /auth/login and /auth/refresh (200). */
+/** Body returned by POST /api/v1/auth/register (201), /api/v1/auth/login and /api/v1/auth/refresh (200). */
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;

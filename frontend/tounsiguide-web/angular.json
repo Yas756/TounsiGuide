@@ -14,7 +14,6 @@
           "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "dist/tounsiguide-web",
-            "allowedCommonJsDependencies": ["leaflet"],
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -25,10 +24,15 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "maplibre-gl-worker.mjs",
+                "input": "node_modules/maplibre-gl/dist",
+                "output": "maplibre"
               }
             ],
             "styles": [
-              "node_modules/leaflet/dist/leaflet.css",
+              "node_modules/maplibre-gl/dist/maplibre-gl.css",
               "src/styles.css"
             ],
             "scripts": []
@@ -57,6 +61,17 @@
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.development.ts"
+                }
+              ]
+            },
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.e2e.ts"
                 }
               ]
             }
@@ -93,7 +108,7 @@
               }
             ],
             "styles": [
-              "node_modules/leaflet/dist/leaflet.css",
+              "node_modules/maplibre-gl/dist/maplibre-gl.css",
               "src/styles.css"
             ],
             "scripts": []

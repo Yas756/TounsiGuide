@@ -4,3 +4,4 @@ com\tounsiguide\gateway\security\JwtAuthFilter$UserHeadersRequest.class
 com\tounsiguide\gateway\ApiGatewayApplication.class
 com\tounsiguide\gateway\config\CorsConfig.class
 com\tounsiguide\gateway\security\JwtAuthFilter.class
+com\tounsiguide\gateway\config\ServiceUnavailableFilter.class

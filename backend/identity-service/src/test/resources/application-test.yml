@@ -4,6 +4,9 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+  # The MySQL migrations are not run on H2; Hibernate builds the test schema.
+  flyway:
+    enabled: false
   jpa:
     hibernate:
       ddl-auto: create-drop

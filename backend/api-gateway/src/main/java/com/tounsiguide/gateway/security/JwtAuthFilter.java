@@ -35,9 +35,13 @@ import java.util.Set;
  * Gateway who is calling, through X-User-Id, X-User-Name and X-User-Roles (see AUTH_CONTRACT.md).
  *
  * <ul>
- *   <li>Any X-User-* header sent by the client is removed first, so nobody can pretend to be someone else.</li>
- *   <li>/auth/**, CORS preflight and /actuator/** need no token.</li>
- *   <li>Reading (GET/HEAD on /api/v1/**) is public. A token that is sent must still be valid.</li>
+ *   <li>Any X-User-* or X-Internal-Token header sent by the client is removed first, so nobody can pretend to be
+ *       someone else.</li>
+ *   <li>Every forwarded request carries X-Internal-Token (shared secret {@code tounsiguide.security.internal-token}):
+ *       the services refuse any request without it, so they can only be reached through the Gateway.</li>
+ *   <li>/api/v1/auth/**, CORS preflight and /actuator/** need no token.</li>
+ *   <li>Reading (GET/HEAD on /api/v1/**) is public, except account data (/api/v1/users/**, /api/v1/admin/**).
+ *       A token that is sent must still be valid.</li>
  *   <li>Everything else needs a valid token, otherwise the answer is 401.</li>
  * </ul>
  * The services still decide what the user may do (author only, admin only...).
@@ -49,20 +53,36 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
     public static final String USER_NAME_HEADER = "X-User-Name";
     public static final String USER_ROLES_HEADER = "X-User-Roles";
 
+    public static final String INTERNAL_TOKEN_HEADER = "X-Internal-Token";
+
     private static final String USER_HEADER_PREFIX = "x-user-";
+    private static final String INTERNAL_TOKEN_LOWER = "x-internal-token";
 
     private final byte[] secret;
     private final String issuer;
+    private final String internalToken;
 
     public JwtAuthFilter(
             @Value("${tounsiguide.security.jwt.secret}") String secret,
-            @Value("${tounsiguide.security.jwt.issuer:tounsiguide-identity}") String issuer
+            @Value("${tounsiguide.security.jwt.issuer:tounsiguide-identity}") String issuer,
+            @Value("${tounsiguide.security.internal-token}") String internalToken
     ) {
         this.secret = secret.getBytes(StandardCharsets.UTF_8);
         if (this.secret.length < 32) {
             throw new IllegalStateException("tounsiguide.security.jwt.secret must be at least 32 characters");
         }
+        if (internalToken == null || internalToken.isBlank()) {
+            throw new IllegalStateException("tounsiguide.security.internal-token must be set");
+        }
         this.issuer = issuer;
+        this.internalToken = internalToken;
+    }
+
+    /** The headers the Gateway adds: the caller's identity (if any) and the internal token. */
+    private Map<String, String> trusted(Map<String, String> identity) {
+        Map<String, String> headers = new LinkedHashMap<>(identity);
+        headers.put(INTERNAL_TOKEN_HEADER, internalToken);
+        return headers;
     }
 
     @Override
@@ -79,15 +99,15 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
         String method = request.getMethod();
         String path = request.getRequestURI();
 
-        if ("OPTIONS".equalsIgnoreCase(method) || path.startsWith("/auth/") || path.startsWith("/actuator")) {
-            chain.doFilter(new UserHeadersRequest(request, Map.of()), response);
+        if ("OPTIONS".equalsIgnoreCase(method) || path.startsWith("/api/v1/auth/") || path.startsWith("/actuator")) {
+            chain.doFilter(new UserHeadersRequest(request, trusted(Map.of())), response);
             return;
         }
 
         String token = bearerToken(request);
         if (token == null) {
             if (isPublicRead(method, path)) {
-                chain.doFilter(new UserHeadersRequest(request, Map.of()), response);
+                chain.doFilter(new UserHeadersRequest(request, trusted(Map.of())), response);
             } else {
                 unauthorized(request, response, "Authentication is required");
             }
@@ -101,7 +121,7 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
             unauthorized(request, response, exception.getMessage());
             return;
         }
-        chain.doFilter(new UserHeadersRequest(request, identity), response);
+        chain.doFilter(new UserHeadersRequest(request, trusted(identity)), response);
     }
 
     private static String bearerToken(HttpServletRequest request) {
@@ -115,7 +135,9 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
 
     private static boolean isPublicRead(String method, String path) {
         boolean safeMethod = "GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method);
-        return safeMethod && path.startsWith("/api/v1/");
+        // Account data is never public, even for reading.
+        boolean accountData = path.startsWith("/api/v1/users/") || path.startsWith("/api/v1/admin/");
+        return safeMethod && path.startsWith("/api/v1/") && !accountData;
     }
 
     private Map<String, String> verify(String token) {
@@ -196,7 +218,11 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
         }
 
         private static boolean isUserHeader(String name) {
-            return name != null && name.toLowerCase(Locale.ROOT).startsWith(USER_HEADER_PREFIX);
+            if (name == null) {
+                return false;
+            }
+            String lower = name.toLowerCase(Locale.ROOT);
+            return lower.startsWith(USER_HEADER_PREFIX) || lower.equals(INTERNAL_TOKEN_LOWER);
         }
 
         @Override
@@ -234,6 +260,7 @@ public class JwtAuthFilter extends OncePerRequestFilter implements Ordered {
                 case "x-user-id" -> USER_ID_HEADER;
                 case "x-user-name" -> USER_NAME_HEADER;
                 case "x-user-roles" -> USER_ROLES_HEADER;
+                case INTERNAL_TOKEN_LOWER -> INTERNAL_TOKEN_HEADER;
                 default -> lowerCaseName;
             };
         }

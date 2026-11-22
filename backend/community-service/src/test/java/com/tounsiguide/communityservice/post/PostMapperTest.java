@@ -10,22 +10,20 @@ class PostMapperTest {
     private final PostMapper mapper = new PostMapper();
 
     @Test
-    void toResponseIncludesThePlaceWhenThePostHasCoordinates() {
-        Post post = new Post("A post", PostService.DEMO_AUTHOR_ID, PostService.DEMO_AUTHOR_NAME, null);
-        post.setPlace("Café des Nattes", "Sidi Bou Said", 36.8702, 10.3416, "place-123");
+    void toResponseCopiesTheLocationIdOnly() {
+        Post post = new Post("A post", "user-1", "Sarra", 4L);
 
         PostResponse response = mapper.toResponse(post);
 
-        assertThat(response.place()).isNotNull();
-        assertThat(response.place().name()).isEqualTo("Café des Nattes");
-        assertThat(response.place().latitude()).isEqualTo(36.8702);
-        assertThat(response.place().googlePlaceId()).isEqualTo("place-123");
+        assertThat(response.content()).isEqualTo("A post");
+        assertThat(response.authorName()).isEqualTo("Sarra");
+        assertThat(response.locationId()).isEqualTo(4L);
     }
 
     @Test
-    void toResponseHasNoPlaceWhenThePostHasNoCoordinates() {
-        Post post = new Post("A post", PostService.DEMO_AUTHOR_ID, PostService.DEMO_AUTHOR_NAME, null);
+    void toResponseHasNoLocationWhenThePostHasNone() {
+        Post post = new Post("A post", "user-1", "Sarra", null);
 
-        assertThat(mapper.toResponse(post).place()).isNull();
+        assertThat(mapper.toResponse(post).locationId()).isNull();
     }
 }

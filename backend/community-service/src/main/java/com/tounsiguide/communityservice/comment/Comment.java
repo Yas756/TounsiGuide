@@ -1,8 +1,11 @@
 package com.tounsiguide.communityservice.comment;
 
 import com.tounsiguide.communityservice.post.Post;
+import com.tounsiguide.communityservice.post.PublicationStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
@@ -62,6 +65,24 @@ public class Comment {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    /** PUBLISHED or RESTRICTED (Sprint 3 moderation). The database default fills the rows created before. */
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "publication_status", nullable = false, length = 20,
+            columnDefinition = "varchar(20) default 'PUBLISHED'")
+    private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
+
+    @Column(name = "restricted_at")
+    private Instant restrictedAt;
+
+    @Size(max = 100)
+    @Column(name = "restricted_by", length = 100)
+    private String restrictedBy;
+
+    @Size(max = 1_000)
+    @Column(name = "restriction_reason", length = 1_000)
+    private String restrictionReason;
+
     protected Comment() {
         // Required by JPA.
     }
@@ -119,6 +140,36 @@ public class Comment {
 
     public void setAuthorName(String authorName) {
         this.authorName = authorName;
+    }
+
+    public PublicationStatus getPublicationStatus() {
+        return publicationStatus;
+    }
+
+    public boolean isRestricted() {
+        return publicationStatus == PublicationStatus.RESTRICTED;
+    }
+
+    public void markRestricted(String adminId, String reason) {
+        this.publicationStatus = PublicationStatus.RESTRICTED;
+        this.restrictedAt = Instant.now();
+        this.restrictedBy = adminId;
+        this.restrictionReason = reason;
+    }
+
+    public void restore() {
+        this.publicationStatus = PublicationStatus.PUBLISHED;
+        this.restrictedAt = null;
+        this.restrictedBy = null;
+        this.restrictionReason = null;
+    }
+
+    public Instant getRestrictedAt() {
+        return restrictedAt;
+    }
+
+    public String getRestrictionReason() {
+        return restrictionReason;
     }
 
     public Instant getCreatedAt() {

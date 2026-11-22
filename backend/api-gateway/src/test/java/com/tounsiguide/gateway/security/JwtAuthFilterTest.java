@@ -24,8 +24,9 @@ class JwtAuthFilterTest {
 
     private static final String SECRET = "test-secret-test-secret-test-secret-1234";
     private static final String ISSUER = "tounsiguide-identity";
+    private static final String INTERNAL_TOKEN = "test-internal-token";
 
-    private final JwtAuthFilter filter = new JwtAuthFilter(SECRET, ISSUER);
+    private final JwtAuthFilter filter = new JwtAuthFilter(SECRET, ISSUER, INTERNAL_TOKEN);
 
     private String token(String secret, String issuer, Instant expiresAt) throws Exception {
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
@@ -114,7 +115,7 @@ class JwtAuthFilterTest {
 
     @Test
     void theUsersRoutesNeedAToken() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/users/me");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/users/me");
 
         MockHttpServletResponse response = run(request, new MockFilterChain());
 
@@ -166,7 +167,7 @@ class JwtAuthFilterTest {
     @Test
     void loginAndPreflightNeedNoToken() throws Exception {
         MockFilterChain loginChain = new MockFilterChain();
-        MockHttpServletResponse login = run(new MockHttpServletRequest("POST", "/auth/login"), loginChain);
+        MockHttpServletResponse login = run(new MockHttpServletRequest("POST", "/api/v1/auth/login"), loginChain);
         MockFilterChain preflightChain = new MockFilterChain();
         MockHttpServletResponse preflight = run(new MockHttpServletRequest("OPTIONS", "/api/v1/posts"), preflightChain);
 
@@ -178,7 +179,47 @@ class JwtAuthFilterTest {
 
     @Test
     void aTooShortSecretIsRejectedAtStartup() {
-        assertThatThrownBy(() -> new JwtAuthFilter("short", ISSUER))
+        assertThatThrownBy(() -> new JwtAuthFilter("short", ISSUER, INTERNAL_TOKEN))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    // ------------------------------------------------------------------ internal token (2026-11-15)
+
+    @Test
+    void everyForwardedRequestCarriesTheInternalToken() throws Exception {
+        MockHttpServletRequest anonymousRead = new MockHttpServletRequest("GET", "/api/v1/posts");
+        MockHttpServletRequest login = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        MockHttpServletRequest authenticated = new MockHttpServletRequest("POST", "/api/v1/posts");
+        authenticated.addHeader("Authorization", "Bearer " + validToken());
+
+        for (MockHttpServletRequest request : List.of(anonymousRead, login, authenticated)) {
+            MockFilterChain chain = new MockFilterChain();
+            run(request, chain);
+            HttpServletRequest forwarded = (HttpServletRequest) chain.getRequest();
+            assertThat(forwarded.getHeader("X-Internal-Token")).isEqualTo(INTERNAL_TOKEN);
+            assertThat(java.util.Collections.list(forwarded.getHeaderNames())).contains("X-Internal-Token");
+        }
+    }
+
+    @Test
+    void anInternalTokenSentByTheClientIsReplaced() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/posts");
+        request.addHeader("x-internal-token", "guessed");
+        request.addHeader("X-User-Roles", "ADMIN");
+        MockFilterChain chain = new MockFilterChain();
+
+        run(request, chain);
+
+        HttpServletRequest forwarded = (HttpServletRequest) chain.getRequest();
+        assertThat(java.util.Collections.list(forwarded.getHeaders("X-Internal-Token"))).containsExactly(INTERNAL_TOKEN);
+        assertThat(java.util.Collections.list(forwarded.getHeaderNames()))
+                .filteredOn(name -> name.equalsIgnoreCase("x-internal-token")).hasSize(1);
+        assertThat(forwarded.getHeader("X-User-Roles")).isNull();
+    }
+
+    @Test
+    void aBlankInternalTokenIsRefusedAtStartup() {
+        assertThatThrownBy(() -> new JwtAuthFilter(SECRET, ISSUER, " "))
                 .isInstanceOf(IllegalStateException.class);
     }
 }

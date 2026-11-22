@@ -44,6 +44,14 @@ public record CurrentUser(String id, String displayName, Set<String> roles) {
         return roles.contains(ADMIN);
     }
 
+    /**
+     * For public reads, where the caller may be anonymous: true when the X-User-Roles value set by the Gateway
+     * contains ADMIN. The Gateway removes any X-User-* header sent by a client, so this cannot be faked.
+     */
+    public static boolean isAdminRoles(String roles) {
+        return roles != null && Arrays.stream(roles.split(",")).map(String::trim).anyMatch(ADMIN::equals);
+    }
+
     public boolean isAuthor(String authorId) {
         return id.equals(authorId);
     }

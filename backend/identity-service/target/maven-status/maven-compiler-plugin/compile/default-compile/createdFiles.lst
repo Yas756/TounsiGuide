@@ -4,6 +4,7 @@ com\tounsiguide\identity\service\UserService.class
 com\tounsiguide\identity\domain\RefreshToken.class
 com\tounsiguide\identity\dto\UserSummary.class
 com\tounsiguide\identity\repository\RefreshTokenRepository.class
+com\tounsiguide\identity\controller\InternalUserController.class
 com\tounsiguide\identity\exception\ApiError.class
 com\tounsiguide\identity\IdentityServiceApplication.class
 com\tounsiguide\identity\controller\AdminUserController.class
@@ -11,6 +12,7 @@ com\tounsiguide\identity\controller\UserController.class
 com\tounsiguide\identity\dto\LoginRequest.class
 com\tounsiguide\identity\security\JwtService.class
 com\tounsiguide\identity\config\SecurityProperties.class
+com\tounsiguide\identity\security\InternalTokenFilter.class
 com\tounsiguide\identity\controller\AuthController.class
 com\tounsiguide\identity\repository\UserRepository.class
 com\tounsiguide\identity\domain\User.class

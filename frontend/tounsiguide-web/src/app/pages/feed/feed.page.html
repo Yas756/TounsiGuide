@@ -1,63 +1,113 @@
-<section class="page-head">
-  <h1>Fil général</h1>
-  <p class="muted">Recommandations, questions et bons plans partagés par la communauté en Tunisie.</p>
+<section class="feed-hero" aria-labelledby="feed-title">
+  <div>
+    <p class="eyebrow">Communauté</p>
+    <h1 id="feed-title">Le fil général</h1>
+    <p class="feed-lead muted">Les recommandations, questions et expériences de la communauté tunisienne.</p>
+  </div>
+  @if (auth.isLoggedIn()) {
+    <a class="btn btn-primary feed-publish" routerLink="/create-post"><span aria-hidden="true">+</span> Nouvelle publication</a>
+  } @else {
+    <div class="feed-auth-actions">
+      <a class="btn btn-primary" routerLink="/login">Se connecter pour publier</a>
+      <a class="link small" routerLink="/register">Créer un compte</a>
+    </div>
+  }
 </section>
 
-@if (auth.isLoggedIn()) {
-  <section class="card composer" aria-label="Nouvelle publication">
-    <app-post-form
-      submitLabel="Publier"
-      [busy]="publishing()"
-      [fieldErrors]="publishError()?.details ?? {}"
-      (submitted)="publish($event)" />
-    @if (publishError(); as e) {
-      @if (!(e.code === 'VALIDATION_ERROR')) {
-        <app-error-banner [error]="e" />
-      }
-    }
-  </section>
-} @else {
-  <section class="card composer-guest" aria-label="Connexion requise">
-    <p><strong>Envie de partager un bon plan ?</strong></p>
-    <p class="muted">Connectez-vous pour publier, commenter et proposer des lieux.</p>
-    <div class="actions actions-small">
-      <a class="btn btn-primary" routerLink="/login">Se connecter</a>
-      <a class="btn btn-ghost" routerLink="/register">Créer un compte</a>
+<section class="feed-context" aria-label="Contexte du fil">
+  <div class="feed-context-copy">
+    <span class="feed-context-dot" aria-hidden="true"></span>
+    <div>
+      <strong>Tout le fil</strong>
+      <span class="muted small">Les publications les plus récentes en premier.</span>
     </div>
-  </section>
-}
+  </div>
+  <div class="feed-context-actions">
+    <span class="feed-filter active">Récent</span>
+    <a class="feed-filter" routerLink="/modules">Par module</a>
+  </div>
+</section>
 
-<section aria-label="Publications" aria-live="polite">
+<section class="feed-list" aria-label="Publications" [attr.aria-busy]="loading() || loadingMore()">
   @if (loading()) {
     @for (i of [1, 2, 3]; track i) {
-      <div class="card skeleton" aria-hidden="true"><div></div><div></div><div></div></div>
+      <div class="card skeleton feed-skeleton" aria-hidden="true"><div></div><div></div><div></div></div>
     }
     <span class="sr-only">Chargement des publications…</span>
   } @else if (loadError()) {
     <app-error-banner [error]="loadError()" [retryable]="true" (retry)="loadPosts()" />
   } @else {
-    @for (p of sortedPosts(); track p.id) {
-      <article class="card post">
+    @for (p of posts(); track p.id) {
+      <article class="card post post-card">
         <header class="post-head">
           <app-avatar [name]="p.authorName" />
-          <div>
+          <div class="post-author">
             <strong>{{ p.authorName }}</strong>
-            <span class="muted" [title]="fullDate(p.createdAt)">
-              · {{ relativeTime(p.createdAt) }}@if (wasEdited(p.createdAt, p.updatedAt)) { · modifié }
+            <span class="muted small" [title]="fullDate(p.createdAt)">
+              {{ relativeTime(p.createdAt) }}@if (wasEdited(p.createdAt, p.updatedAt)) { · modifié }
             </span>
           </div>
+          @if (p.moduleSlug) {
+            <a class="post-kicker module-chip" [routerLink]="['/modules', p.moduleSlug]">{{ p.moduleName }}</a>
+          } @else {
+            <span class="post-kicker">Publication</span>
+          }
         </header>
         <p class="post-content">{{ p.content }}</p>
+        <app-media-gallery [media]="p.media" />
         <footer class="post-foot">
-          <app-location-tag [place]="p.place" [locationId]="p.locationId" [location]="p.locationId !== null ? locationById().get(p.locationId) : undefined" />
-          <a class="link" [routerLink]="['/posts', p.id]">Voir la discussion →</a>
+          <div class="post-place" aria-label="État du lieu">
+            @if (summaryOf(p.id); as s) {
+              @if (s.confirmed; as c) {
+                <app-location-tag [locationId]="c.locationId" [location]="locationById().get(c.locationId)" />
+                <span class="status status-confirmed" [title]="'Lieu confirmé · confiance ' + c.score + ' / 100'">Confirmé</span>
+                <app-official-page-link [locationId]="c.locationId" />
+              } @else {
+                @if (p.locationId !== null) {
+                  <app-location-tag [locationId]="p.locationId" [location]="locationById().get(p.locationId)" />
+                }
+                <span class="status status-proposed">
+                  Lieu non résolu@if (s.openProposals) { · {{ s.openProposals }} proposition{{ s.openProposals > 1 ? 's' : '' }} }
+                </span>
+              }
+            } @else {
+              <app-location-tag [locationId]="p.locationId" [location]="p.locationId !== null ? locationById().get(p.locationId) : undefined" />
+            }
+          </div>
+          <app-like-button [postId]="p.id" [summary]="likeById().get(p.id)" />
+          <a class="post-discussion-link" [routerLink]="['/posts', p.id]">Voir la discussion <span aria-hidden="true">→</span></a>
         </footer>
       </article>
     } @empty {
-      <div class="card empty">
-        <p><strong>Aucune publication pour le moment.</strong></p>
+      <div class="card empty feed-empty">
+        <span class="empty-mark" aria-hidden="true">✦</span>
+        <p><strong>Le fil est encore calme.</strong></p>
         <p class="muted">Soyez le premier à partager un bon plan avec la communauté.</p>
+        @if (auth.isLoggedIn()) {
+          <a class="btn btn-primary" routerLink="/create-post">Créer la première publication</a>
+        } @else {
+          <a class="btn btn-primary" routerLink="/register">Rejoindre la communauté</a>
+        }
       </div>
+    }
+
+    <!-- Infinite scroll: the next page loads when this sentinel comes within 400px of the viewport. -->
+    @if (moreError()) {
+      <div class="feed-more-error" role="alert">
+        <span class="muted small">Impossible de charger la suite du fil.</span>
+        <button type="button" class="btn btn-ghost btn-small" (click)="retryMore()">Réessayer</button>
+      </div>
+    } @else if (hasMore()) {
+      <div #sentinel class="feed-sentinel" aria-hidden="true"></div>
+      @if (loadingMore()) {
+        <div class="feed-loading-more"><span class="feed-spinner" aria-hidden="true"></span>
+          <span class="muted small">Chargement…</span></div>
+      } @else if (!canObserve) {
+        <button type="button" class="btn btn-ghost feed-more-button" (click)="loadMore()">Afficher plus</button>
+      }
+    } @else if (posts().length) {
+      <p class="feed-end muted small">Vous avez tout vu</p>
     }
   }
 </section>
+<p class="sr-only" role="status" aria-live="polite">{{ status() }}</p>

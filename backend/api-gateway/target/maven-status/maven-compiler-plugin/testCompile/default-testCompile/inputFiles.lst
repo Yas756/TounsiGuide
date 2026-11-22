@@ -1,2 +1,7 @@
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\api-gateway\src\test\java\com\tounsiguide\gateway\ApiGatewayApplicationTests.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\api-gateway\src\test\java\com\tounsiguide\gateway\config\CorsConfigTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\api-gateway\src\test\java\com\tounsiguide\gateway\config\ServiceUnavailableFilterTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\api-gateway\src\test\java\com\tounsiguide\gateway\MediaProxyTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\api-gateway\src\test\java\com\tounsiguide\gateway\RouteOrderTest.java
 C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\api-gateway\src\test\java\com\tounsiguide\gateway\security\JwtAuthFilterTest.java
+C:\Users\Adam Turki\Desktop\Projet d'integration\TOUNSIguide\backend\api-gateway\src\test\java\com\tounsiguide\gateway\ServiceDownTest.java
